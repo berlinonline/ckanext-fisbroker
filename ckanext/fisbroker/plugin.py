@@ -141,7 +141,7 @@ class FisbrokerPlugin(CSWHarvester):
 
             # source:
 
-            extras['berlin_source'] = 'fis_broker'
+            extras['berlin_source'] = 'harvest-fisbroker'
 
             # always put in 'geo' group
 
