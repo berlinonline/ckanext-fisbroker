@@ -46,31 +46,43 @@ class FisbrokerPlugin(CSWHarvester):
     def get_package_dict(self, context, data_dict):
         log.debug("--------- get_package_dict ----------")
 
-        # log.debug(data_dict)
-        # methods = [method for method in dir(data_dict) if callable(getattr(data_dict, method))]
-        # log.debug(methods)
-
-        # foo = data_dict.as_dict()
-
         if hasattr(data_dict, '__getitem__'):
 
             package_dict = data_dict['package_dict']
             iso_values = data_dict['iso_values']
 
-            # log.debug("----- data before get_package_dict -----")
-            # log.debug(package_dict)
-            # log.debug(iso_values)
+            log.debug(iso_values['title'])
 
             # checking for 'opendata' tag
             tags = iso_values['tags']
             if not 'opendata' in tags:
                 log.debug("no 'opendata' tag, skipping dataset ...")
                 return False
+            log.debug("this is tagged 'opendata', continuing ...")
+            
+            # we're only interested in service resources
+            log.debug("resource type: {0}".format(iso_values['resource-type']))
+            if not 'service' in iso_values['resource-type']:
+                log.debug("this is not a service resource, skipping dataset ...")
+                return False
+            log.debug("this is a service resource, continuing ...")
+            
 
-            log.debug(iso_values)
-            log.debug(package_dict)
+            # log.debug(iso_values)
+            # log.debug(package_dict)
             extras = self.extras_dict(package_dict['extras'])
-            log.debug(extras)
+            # log.debug(extras)
+
+            # filter out 'äöü' tag
+            if u'äöü' in tags:
+                package_dict['tags'].remove({'name': u'äöü'})
+
+            # filter out 'opendata' tags, we know it's open data
+            if u'opendata' in tags:
+                package_dict['tags'].remove({'name': u'opendata'})
+            if u'open data' in tags:
+                package_dict['tags'].remove({'name': u'open data'})
+
 
             # Veröffentlichende Stelle / author
             # Datenverantwortliche Stelle / maintainer
@@ -134,6 +146,43 @@ class FisbrokerPlugin(CSWHarvester):
                 log.error('could not get anything for date_released from ISO values')
                 return False
 
+            # URL - strange that this isn't set by default
+            url = iso_values['url']
+            package_dict['url'] = url
+
+            # resources
+            resources = package_dict['resources']
+            delete = None
+            # set resource names and formats based on URLs
+            # let's hope this is regular...
+            for resource in resources:
+                if "/feed/" in resource['url']:
+                    resource['name'] = "Atom Feed"
+                    resource['format'] = "Atom"
+                elif "/wfs/" in resource['url']:
+                    resource['name'] = "WFS Service"
+                    resource['format'] = "WFS"
+                    resource['url'] += "?service=wfs&request=GetCapabilities"
+                elif "/wms/" in resource['url']:
+                    resource['name'] = "WMS Service"
+                    resource['format'] = "WMS"
+                    resource['url'] += "?service=wms&request=GetCapabilities"
+                else:
+                    # If the resource is none of the above, it's just the 
+                    # dataset page in FIS-Broker. We don't want that as
+                    # a resource.
+                    delete = resource
+
+            if delete:
+                resources.remove(delete)
+
+            # We can have different service datasets with the same
+            # name. We don't want that, so we add the service resource's
+            # format to make the title and name unique.
+            resource_format = resources[0]['format']
+            package_dict['title'] = u"{0} - [{1}]".format(package_dict['title'], resource_format)
+            package_dict['name'] = "{0}-{1}".format(package_dict['name'], resource_format.lower())
+
 
             # internal dataset type:
 
@@ -164,9 +213,14 @@ class FisbrokerPlugin(CSWHarvester):
 
             # temporal_coverage-from
             # TODO: can we determine this from the ISO values?
+            # shold be iso_values['temporal-extent-begin']
+            # which is derived from:
+            # gmd:identificationInfo/gmd:MD_DataIdentification/gmd:extent/gmd:EX_Extent/gmd:temporalElement
+            # but that doesn't show up anywhere in FIS Broker...
 
             # temporal_coverage-to
             # TODO: can we determine this from the ISO values?
+            # shold be iso_values['temporal-extent-end']
 
             # log.debug("----- data after get_package_dict -----")
             # log.debug(package_dict)
