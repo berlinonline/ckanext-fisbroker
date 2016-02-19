@@ -140,11 +140,16 @@ class FisbrokerPlugin(CSWHarvester):
             if not 'date_released' in extras and 'date_updated' in extras:
                 log.info('date_released not set, but date_updated is: using date_updated as date_released')
                 extras['date_released'] = extras['date_updated']
-                extras.pop('date_updated', None)
+                # extras.pop('date_updated', None)
 
             if not 'date_released' in extras:
                 log.error('could not get anything for date_released from ISO values')
                 return False
+
+            # we always want to set date_updated as well, to prevent confusing 
+            # Datenportal's ckan_import module:
+            if not 'date_updated' in extras:
+                extras['date_updated'] = extras['date_released']
 
             # URL - strange that this isn't set by default
             url = iso_values['url']
