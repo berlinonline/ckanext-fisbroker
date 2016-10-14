@@ -163,13 +163,16 @@ class FisbrokerPlugin(CSWHarvester):
             for resource in resources:
                 if "/feed/" in resource['url']:
                     resource['name'] = "Atom Feed"
+                    resource['description'] = "Atom Feed"
                     resource['format'] = "Atom"
                 elif "/wfs/" in resource['url']:
                     resource['name'] = "WFS Service"
+                    resource['description'] = "WFS Service"
                     resource['format'] = "WFS"
                     resource['url'] += "?service=wfs&request=GetCapabilities"
                 elif "/wms/" in resource['url']:
                     resource['name'] = "WMS Service"
+                    resource['description'] = "WMS Service"
                     resource['format'] = "WMS"
                     resource['url'] += "?service=wms&request=GetCapabilities"
                 else:
