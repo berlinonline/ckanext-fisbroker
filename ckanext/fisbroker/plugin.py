@@ -185,8 +185,9 @@ class FisbrokerPlugin(CSWHarvester):
             # name. We don't want that, so we add the service resource's
             # format to make the title and name unique.
             resource_format = resources[0]['format']
-            package_dict['title'] = u"{0} - [{1}]".format(package_dict['title'], resource_format)
-            package_dict['name'] = "{0}-{1}".format(package_dict['name'], resource_format.lower())
+            if (resource_format is not None):
+                package_dict['title'] = u"{0} - [{1}]".format(package_dict['title'], resource_format)
+                package_dict['name'] = "{0}-{1}".format(package_dict['name'], resource_format.lower())
 
 
             # internal dataset type:
