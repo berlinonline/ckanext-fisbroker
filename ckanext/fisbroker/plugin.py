@@ -57,14 +57,14 @@ class FisbrokerPlugin(CSWHarvester):
             tags = iso_values['tags']
             if not 'opendata' in tags:
                 log.debug("no 'opendata' tag, skipping dataset ...")
-                return False
+                return 'skip'
             log.debug("this is tagged 'opendata', continuing ...")
             
             # we're only interested in service resources
             log.debug("resource type: {0}".format(iso_values['resource-type']))
             if not 'service' in iso_values['resource-type']:
                 log.debug("this is not a service resource, skipping dataset ...")
-                return False
+                return 'skip'
             log.debug("this is a service resource, continuing ...")
             
 
@@ -93,18 +93,18 @@ class FisbrokerPlugin(CSWHarvester):
                 if 'organisation-name' in resp_org:
                     package_dict['author'] = resp_org['organisation-name']
                 else:
-                    log.error('could not determine responsible organisation name')
-                    return False
+                    log.error('could not determine responsible organisation name, skipping ...')
+                    return 'skip'
                 if 'contact-info' in resp_org:
                     package_dict['maintainer_email'] = resp_org['contact-info']['email']
                 else:
-                    log.error('could not determine responsible organisation email')
-                    return False
+                    log.error('could not determine responsible organisation email, skipping ...')
+                    return 'skip'
                 if 'individual-name' in resp_org:
                     package_dict['maintainer'] = resp_org['individual-name']
             else:
-                log.error('could not determine responsible organisation')
-                return False
+                log.error('could not determine responsible organisation, skipping ...')
+                return 'skip'
 
             # Veröffentlichende Stelle Email / author_email
             # Veröffentlichende Person / extras.username
@@ -121,8 +121,8 @@ class FisbrokerPlugin(CSWHarvester):
                         log.info('could not parse as JSON: %s' % restriction)
 
             if not 'license_id' in package_dict:
-                log.error('could not determine license code')
-                return False
+                log.error('could not determine license code, skipping ...')
+                return 'skip'
 
             # extras.date_released / extras.date_updated
 
@@ -143,8 +143,8 @@ class FisbrokerPlugin(CSWHarvester):
                 # extras.pop('date_updated', None)
 
             if not 'date_released' in extras:
-                log.error('could not get anything for date_released from ISO values')
-                return False
+                log.error('could not get anything for date_released from ISO values, skipping ...')
+                return 'skip'
 
             # we always want to set date_updated as well, to prevent confusing 
             # Datenportal's ckan_import module:
