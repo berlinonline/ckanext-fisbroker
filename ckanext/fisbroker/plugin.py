@@ -190,7 +190,8 @@ class FisbrokerPlugin(CSWHarvester):
             resource_format = resources[0]['format']
             if (resource_format is not None):
                 package_dict['title'] = u"{0} - [{1}]".format(package_dict['title'], resource_format)
-                package_dict['name'] = "{0}-{1}".format(package_dict['name'], resource_format.lower())
+                package_dict['name'] = self._gen_new_name("{0}-{1}".format(package_dict['name'], resource_format.lower()))
+                log.info('package name set to: %s' % package_dict['name'])
 
 
             # internal dataset type:
