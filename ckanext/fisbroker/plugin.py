@@ -6,6 +6,7 @@ import ckan.plugins.toolkit as toolkit
 from ckanext.spatial.interfaces import ISpatialHarvester
 from ckanext.spatial.harvesters.csw import CSWHarvester
 from ckanext.spatial.validation.validation import BaseValidator
+from owslib.fes import PropertyIsGreaterThanOrEqualTo
 
 import json
 
@@ -23,6 +24,12 @@ class FisbrokerPlugin(CSWHarvester):
         for item in extras_list:
             extras_dict[item['key']] = item['value']
         return extras_dict
+
+    def get_constraints(self):
+        date = '2017-11-10'
+        log.info("date constraint: %s" % date)
+        date_query = PropertyIsGreaterThanOrEqualTo('modified', '2017-11-10')
+        return [date_query]
 
     # IConfigurer
 
