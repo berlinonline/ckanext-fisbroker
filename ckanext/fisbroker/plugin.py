@@ -31,6 +31,11 @@ class FisbrokerPlugin(CSWHarvester):
         date_query = PropertyIsGreaterThanOrEqualTo('modified', '2017-11-10')
         return [date_query]
 
+    def get_timeout(self):
+        timeout = 20
+        log.info("timeout: %s" % timeout)
+        return timeout
+
     # IConfigurer
 
     def update_config(self, config):
