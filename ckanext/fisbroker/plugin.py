@@ -1,6 +1,7 @@
 # coding: utf-8
 
 import logging
+from datetime import datetime
 import ckan.plugins as plugins
 import ckan.plugins.toolkit as toolkit
 from ckanext.spatial.interfaces import ISpatialHarvester
@@ -16,8 +17,9 @@ log = logging.getLogger(__name__)
 
 class FisbrokerPlugin(CSWHarvester):
     plugins.implements(plugins.IConfigurer)
-
     plugins.implements(ISpatialHarvester, inherit=True)
+
+    import_since_keywords = [ "last_error_free", "big_bang" ]
 
     def extras_dict(self, extras_list):
         extras_dict = {}
@@ -25,16 +27,42 @@ class FisbrokerPlugin(CSWHarvester):
             extras_dict[item['key']] = item['value']
         return extras_dict
 
+    def get_import_since_date(self):
+        return self.source_config['import_since']
+
     def get_constraints(self):
-        date = '2017-11-10'
+        date = self.get_import_since_date()
         log.info("date constraint: %s" % date)
-        date_query = PropertyIsGreaterThanOrEqualTo('modified', '2017-11-10')
+        date_query = PropertyIsGreaterThanOrEqualTo('modified', date)
         return [date_query]
 
     def get_timeout(self):
         timeout = 20
         log.info("timeout: %s" % timeout)
         return timeout
+
+    # IHarvester
+
+    def validate_config(self, config):
+        log.info("validating config in FisbrokerPlugin")
+        if not config:
+            return config
+
+        try:
+            config_obj = json.loads(config)
+
+            if 'import_since' in config_obj:
+                import_since = config_obj['import_since']
+                try:
+                    if (import_since not in self.import_since_keywords):
+                        datetime.strptime(import_since, "%Y-%m-%d")
+                except ValueError:
+                    raise ValueError('\'import_since\' is not a valid date: \'%s\'. Use ISO8601: YYYY-MM-DD or one of %s' % (import_since, self.import_since_keywords) )
+
+        except ValueError, e:
+            raise e
+
+        return CSWHarvester.validate_config(self, config)
 
     # IConfigurer
 
