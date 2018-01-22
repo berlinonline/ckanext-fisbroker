@@ -27,14 +27,31 @@ class FisbrokerPlugin(CSWHarvester):
             extras_dict[item['key']] = item['value']
         return extras_dict
 
-    def get_import_since_date(self):
-        return self.source_config['import_since']
+    def get_import_since_date(self, harvest_job):
+        import_since = self.source_config['import_since']
+        if (import_since == 'last_error_free'):
+            last_error_free_job = self.last_error_free_job(harvest_job)
+            log.debug('Last error-free job: %r', last_error_free_job)
+            if last_error_free_job:
+                log.info("timezone: %s" % last_error_free_job.gather_started.strftime("%z"))
+                return last_error_free_job.gather_started.strftime("%Y-%m-%dT%H:%M:%S%z")
+            else:
+                return None
+        elif (import_since == 'big_bang'):
+            # looking since big bang means no date constraint
+            return None
+        return import_since
 
-    def get_constraints(self):
-        date = self.get_import_since_date()
-        log.info("date constraint: %s" % date)
-        date_query = PropertyIsGreaterThanOrEqualTo('modified', date)
-        return [date_query]
+    def get_constraints(self, harvest_job):
+        date = self.get_import_since_date(harvest_job)
+        if date:
+            log.info("date constraint: %s" % date)
+            date_query = PropertyIsGreaterThanOrEqualTo('modified', date)
+            return [date_query]
+        else:
+            log.info("no date constraint")
+            return []
+
 
     def get_timeout(self):
         timeout = 20
@@ -44,7 +61,6 @@ class FisbrokerPlugin(CSWHarvester):
     # IHarvester
 
     def validate_config(self, config):
-        log.info("validating config in FisbrokerPlugin")
         if not config:
             return config
 
