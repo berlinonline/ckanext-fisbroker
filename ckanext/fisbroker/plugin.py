@@ -28,6 +28,8 @@ class FisbrokerPlugin(CSWHarvester):
         return extras_dict
 
     def get_import_since_date(self, harvest_job):
+        if not 'import_since' in self.source_config:
+            return None
         import_since = self.source_config['import_since']
         if (import_since == 'last_error_free'):
             last_error_free_job = self.last_error_free_job(harvest_job)
