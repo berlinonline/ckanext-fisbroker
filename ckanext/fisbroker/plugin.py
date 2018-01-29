@@ -2,6 +2,7 @@
 
 import logging
 from datetime import datetime
+from datetime import timedelta
 import ckan.plugins as plugins
 import ckan.plugins.toolkit as toolkit
 from ckanext.spatial.interfaces import ISpatialHarvester
@@ -35,8 +36,8 @@ class FisbrokerPlugin(CSWHarvester):
             last_error_free_job = self.last_error_free_job(harvest_job)
             log.debug('Last error-free job: %r', last_error_free_job)
             if last_error_free_job:
-                log.info("timezone: %s" % last_error_free_job.gather_started.strftime("%z"))
-                return last_error_free_job.gather_started.strftime("%Y-%m-%dT%H:%M:%S%z")
+                gather_time = (last_error_free_job.gather_started + timedelta(hours=self.get_timedelta()))
+                return gather_time.strftime("%Y-%m-%dT%H:%M:%S%z")
             else:
                 return None
         elif (import_since == 'big_bang'):
@@ -62,6 +63,13 @@ class FisbrokerPlugin(CSWHarvester):
         log.info("timeout: %s" % timeout)
         return timeout
 
+    def get_timedelta(self):
+        timedelta = 0 # default
+        if 'timedelta' in self.source_config:
+            timedelta = int(self.source_config['timedelta'])
+        log.info("timedelta: %s" % timedelta)
+        return timedelta
+
     # IHarvester
 
     def validate_config(self, config):
@@ -84,7 +92,14 @@ class FisbrokerPlugin(CSWHarvester):
                 try:
                     config_obj['timeout'] = int(timeout)
                 except ValueError:
-                    raise ValueError('\'timeout\' is not a valid: \'%s\'. Please use whole numbers to indicate seconds until timeout.' % timeout)
+                    raise ValueError('\'timeout\' is not valid: \'%s\'. Please use whole numbers to indicate seconds until timeout.' % timeout)
+
+            if 'timedelta' in config_obj:
+                timedelta = config_obj['timedelta']
+                try:
+                    config_obj['timedelta'] = int(timedelta)
+                except ValueError:
+                    raise ValueError('\'timedelta\' is not valid: \'%s\'. Please use whole numbers to indicate timedelta between UTC and harvest source timezone.' % timedelta)
 
             config = json.dumps(config_obj, indent=2)
 
