@@ -56,7 +56,9 @@ class FisbrokerPlugin(CSWHarvester):
 
 
     def get_timeout(self):
-        timeout = 20
+        timeout = 20 # default
+        if 'timeout' in self.source_config:
+            timeout = int(self.source_config['timeout'])
         log.info("timeout: %s" % timeout)
         return timeout
 
@@ -75,7 +77,16 @@ class FisbrokerPlugin(CSWHarvester):
                     if (import_since not in self.import_since_keywords):
                         datetime.strptime(import_since, "%Y-%m-%d")
                 except ValueError:
-                    raise ValueError('\'import_since\' is not a valid date: \'%s\'. Use ISO8601: YYYY-MM-DD or one of %s' % (import_since, self.import_since_keywords) )
+                    raise ValueError('\'import_since\' is not a valid date: \'%s\'. Use ISO8601: YYYY-MM-DD or one of %s.' % (import_since, self.import_since_keywords) )
+
+            if 'timeout' in config_obj:
+                timeout = config_obj['timeout']
+                try:
+                    config_obj['timeout'] = int(timeout)
+                except ValueError:
+                    raise ValueError('\'timeout\' is not a valid: \'%s\'. Please use whole numbers to indicate seconds until timeout.' % timeout)
+
+            config = json.dumps(config_obj, indent=2)
 
         except ValueError, e:
             raise e
