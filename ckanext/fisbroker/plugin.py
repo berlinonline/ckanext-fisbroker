@@ -201,6 +201,7 @@ class FisbrokerPlugin(CSWHarvester):
                     try:
                         structured = json.loads(restriction)
                         package_dict['license_id'] = structured['id']
+                        extras['attribution_text'] = structured['quelle']
                     except (ValueError) as e:
                         log.info('could not parse as JSON: %s' % restriction)
 
