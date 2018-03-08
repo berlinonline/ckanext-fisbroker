@@ -43,3 +43,6 @@ docs/_build/
 
 # dev examples
 examples/
+
+# OS X
+.DS_Store
