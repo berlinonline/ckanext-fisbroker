@@ -57,14 +57,7 @@ cd -
 
 echo "Installing $PLUGIN and its requirements ..."
 python setup.py develop
-if [ -f requirements.txt ]
-then
-    pip install -r requirements.txt
-fi
-if [ -f dev-requirements.txt ]
-then
-    pip install -r dev-requirements.txt
-fi
+pip install -r travis-requirements.txt
 
 echo "Moving test.ini into a subdir..."
 mkdir subdir
