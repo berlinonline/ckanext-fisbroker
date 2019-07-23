@@ -8,7 +8,7 @@ nosetests --ckan \
           --nologcapture \
           --with-pylons=subdir/test.ini \
           --with-coverage \
-          --cover-package=ckanext.validationapi \
+          --cover-package=ckanext.fisbroker \
           --cover-inclusive \
           --cover-erase \
           --cover-tests
