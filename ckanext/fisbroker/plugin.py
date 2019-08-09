@@ -272,12 +272,24 @@ class FisbrokerPlugin(CSWHarvester):
             # We can have different service datasets with the same
             # name. We don't want that, so we add the service resource's
             # format to make the title and name unique.
-            resource_format = resources[0]['format']
-            if (resource_format is not None):
-                package_dict['title'] = u"{0} - [{1}]".format(package_dict['title'], resource_format)
-                package_dict['name'] = self._gen_new_name("{0}-{1}".format(package_dict['name'], resource_format.lower()))
-                log.info('package name set to: %s' % package_dict['name'])
+            # we also add the first part of the guid, for good measure (sometimes resources
+            # have the same name)
+            title = package_dict['title']
 
+            main_resources = [resource for resource in resources if resource.get('main', False)]
+            main_resource = main_resources.pop()
+            resource_format = main_resource.get('format', None)
+            if (resource_format is not None):
+                title = u"{0} - [{1}]".format(title, resource_format)
+            package_dict['title'] = title
+
+            name = munge_title_to_name(title)
+            name = re.sub('-+', '-', name)
+
+            guid = iso_values['guid']
+            guid_part = guid.split('-')[0]
+            package_dict['name'] = "{0}-{1}".format(name, guid_part)
+            log.info('package name set to: %s' % package_dict['name'])
 
             # internal dataset type:
 
