@@ -241,33 +241,38 @@ class FisbrokerPlugin(CSWHarvester):
             package_dict['url'] = url
 
             # resources
-            resources = package_dict['resources']
-            delete = None
-            # set resource names and formats based on URLs
-            # let's hope this is regular...
-            for resource in resources:
+            def convert_resource(resource):
                 if "/feed/" in resource['url']:
                     resource['name'] = "Atom Feed"
                     resource['description'] = "Atom Feed"
                     resource['format'] = "Atom"
+                    resource['main'] = True
                 elif "/wfs/" in resource['url']:
                     resource['name'] = "WFS Service"
                     resource['description'] = "WFS Service"
                     resource['format'] = "WFS"
                     resource['url'] += "?service=wfs&request=GetCapabilities"
+                    resource['main'] = True
                 elif "/wms/" in resource['url']:
                     resource['name'] = "WMS Service"
                     resource['description'] = "WMS Service"
                     resource['format'] = "WMS"
                     resource['url'] += "?service=wms&request=GetCapabilities"
+                    resource['main'] = True
+                elif resource['url'].startswith('https://fbinter.stadt-berlin.de/fb'):
+                    resource['name'] = "Serviceseite im FIS-Broker"
+                    resource['format'] = "HTML"
+                    resource['description'] = "Serviceseite im FIS-Broker"
+                elif resource['description']:
+                    resource['name'] = resource['description']
+                    resource['main'] = False
                 else:
-                    # If the resource is none of the above, it's just the 
-                    # dataset page in FIS-Broker. We don't want that as
-                    # a resource.
-                    delete = resource
+                    resource = None
+                return resource
 
-            if delete:
-                resources.remove(delete)
+            resources = [convert_resource(resource) for resource in package_dict['resources']]
+            resources = filter(None, resources)
+            package_dict['resources'] = resources
 
             # We can have different service datasets with the same
             # name. We don't want that, so we add the service resource's
