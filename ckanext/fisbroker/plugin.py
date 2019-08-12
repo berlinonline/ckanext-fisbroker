@@ -286,9 +286,10 @@ class FisbrokerPlugin(CSWHarvester):
             for preview_graphic in preview_graphics:
                 preview_graphic_title = preview_graphic.get('description', None)
                 if preview_graphic_title == u"Vorschaugrafik":
+                    preview_graphic_title = u"Vorschaugrafik zu Datensatz '{}'".format(package_dict['title'])
                     preview_graphic_path = preview_graphic.get('file', None)
                     if preview_graphic_path:
-                        preview_markup = "\n\n![{}]({})".format(preview_graphic_title, preview_graphic_path)
+                        preview_markup = u"\n\n![{}]({})".format(preview_graphic_title, preview_graphic_path)
                         package_dict['notes'] += preview_markup
 
             # We can have different service datasets with the same
