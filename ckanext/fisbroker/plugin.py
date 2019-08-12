@@ -1,16 +1,19 @@
 # coding: utf-8
 
-import logging
 from datetime import datetime
 from datetime import timedelta
+import json
+import logging
+import re
+
+from ckan.lib.munge import munge_title_to_name
 import ckan.plugins as plugins
 import ckan.plugins.toolkit as toolkit
 from ckanext.spatial.interfaces import ISpatialHarvester
 from ckanext.spatial.harvesters.csw import CSWHarvester
 from ckanext.spatial.validation.validation import BaseValidator
-from owslib.fes import PropertyIsGreaterThanOrEqualTo
 
-import json
+from owslib.fes import PropertyIsGreaterThanOrEqualTo
 
 log = logging.getLogger(__name__)
 
