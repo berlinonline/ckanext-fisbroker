@@ -266,7 +266,7 @@ class FisbrokerPlugin(CSWHarvester):
                     resource['format'] = "WMS"
                     resource['url'] += "?service=wms&request=GetCapabilities"
                     resource['main'] = True
-                elif resource['url'].startswith('https://fbinter.stadt-berlin.de/fb'):
+                elif resource['url'].startswith('https://fbinter.stadt-berlin.de/fb?loginkey='):
                     resource['name'] = "Serviceseite im FIS-Broker"
                     resource['format'] = "HTML"
                     resource['description'] = "Serviceseite im FIS-Broker"
