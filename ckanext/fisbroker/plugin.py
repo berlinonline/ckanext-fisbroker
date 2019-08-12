@@ -209,7 +209,7 @@ class FisbrokerPlugin(CSWHarvester):
                 log.error('could not determine license code, skipping ...')
                 return 'skip'
 
-            if package_dict['license_id'] is "dl-de-by-2-0":
+            if package_dict['license_id'] == "dl-de-by-2-0":
                 package_dict['license_id'] = "dl-de-by-2.0"
                 log.info("fix bad DL-DE-BY id")
 
