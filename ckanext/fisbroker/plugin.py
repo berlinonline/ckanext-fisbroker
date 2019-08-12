@@ -278,6 +278,16 @@ class FisbrokerPlugin(CSWHarvester):
             resources = filter(None, resources)
             package_dict['resources'] = resources
 
+            # Preview graphic
+            preview_graphics = iso_values.get("browse-graphic", [])
+            for preview_graphic in preview_graphics:
+                preview_graphic_title = preview_graphic.get('description', None)
+                if preview_graphic_title == u"Vorschaugrafik":
+                    preview_graphic_path = preview_graphic.get('file', None)
+                    if preview_graphic_path:
+                        preview_markup = "\n\n![{}]({})".format(preview_graphic_title, preview_graphic_path)
+                        package_dict['notes'] += preview_markup
+
             # We can have different service datasets with the same
             # name. We don't want that, so we add the service resource's
             # format to make the title and name unique.
