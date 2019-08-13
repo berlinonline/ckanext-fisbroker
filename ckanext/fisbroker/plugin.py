@@ -308,6 +308,9 @@ class FisbrokerPlugin(CSWHarvester):
 
             name = munge_title_to_name(title)
             name = re.sub('-+', '-', name)
+            # ensure we don't exceed the allowed name length of 100:
+            # (100-len(guid_part)-1)
+            name = name[:91].strip('-')
 
             guid = iso_values['guid']
             guid_part = guid.split('-')[0]
