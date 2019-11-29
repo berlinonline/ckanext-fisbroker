@@ -15,6 +15,8 @@ from ckanext.spatial.validation.validation import BaseValidator
 
 from owslib.fes import PropertyIsGreaterThanOrEqualTo
 
+from ckanext.fisbroker.fisbroker_resource_converter import FISBrokerResourceConverter
+
 log = logging.getLogger(__name__)
 
 # http://fbinter.stadt-berlin.de/fb/csw
@@ -247,37 +249,8 @@ class FisbrokerPlugin(CSWHarvester):
             url = iso_values['url']
             package_dict['url'] = url
 
-            # resources
-            def convert_resource(resource):
-                if "/feed/" in resource['url']:
-                    resource['name'] = "Atom Feed"
-                    resource['description'] = "Atom Feed"
-                    resource['format'] = "Atom"
-                    resource['main'] = True
-                elif "/wfs/" in resource['url']:
-                    resource['name'] = "WFS Service"
-                    resource['description'] = "WFS Service"
-                    resource['format'] = "WFS"
-                    resource['url'] += "?service=wfs&request=GetCapabilities"
-                    resource['main'] = True
-                elif "/wms/" in resource['url']:
-                    resource['name'] = "WMS Service"
-                    resource['description'] = "WMS Service"
-                    resource['format'] = "WMS"
-                    resource['url'] += "?service=wms&request=GetCapabilities"
-                    resource['main'] = True
-                elif resource['url'].startswith('https://fbinter.stadt-berlin.de/fb?loginkey='):
-                    resource['name'] = "Serviceseite im FIS-Broker"
-                    resource['format'] = "HTML"
-                    resource['description'] = "Serviceseite im FIS-Broker"
-                elif resource['description']:
-                    resource['name'] = resource['description']
-                    resource['main'] = False
-                else:
-                    resource = None
-                return resource
-
-            resources = [convert_resource(resource) for resource in package_dict['resources']]
+            converter = FISBrokerResourceConverter()
+            resources = [converter.convert_resource(resource) for resource in package_dict['resources']]
             resources = filter(None, resources)
             package_dict['resources'] = resources
 
