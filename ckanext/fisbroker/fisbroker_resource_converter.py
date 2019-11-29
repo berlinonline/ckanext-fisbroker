@@ -14,7 +14,7 @@ class FISBrokerResourceConverter:
 
     def normalize_url(self, url):
         """Normalize URL by sorting query parameters and lowercasing the values
-           (because in parameter values are not case sensitive in WMS/WFS)."""
+           (because parameter values are not case sensitive in WMS/WFS)."""
 
         parsed = urlparse(url)
         query = parse_qs(parsed.query)
@@ -27,7 +27,7 @@ class FISBrokerResourceConverter:
 
     def build_service_resource(self, resource):
         """Build either a WMS or WFS service resource from service URL."""
-        
+
         if "/wfs/" in resource['url']:
             service_type = "WFS"
         elif "/wms/" in resource['url']:
