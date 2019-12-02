@@ -8,18 +8,17 @@ from ckan.lib.base import config
 from ckan.logic import get_action
 from ckan.logic.schema import default_update_package_schema
 from ckan import model
-from ckan.model import Session, Package
-import ckan.plugins
+from ckan.model import Session
 
 from ckanext.harvest.model import (
-    HarvestSource, 
-    HarvestJob, 
+    HarvestSource,
+    HarvestJob,
     HarvestObject,
     HarvestObjectExtra
 )
 from ckanext.fisbroker.plugin import FisbrokerPlugin
 
-from xml_file_server import serve
+from ckanext.fisbroker.tests.xml_file_server import serve
 
 # Start simple HTTP server that serves XML test files
 serve()

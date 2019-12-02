@@ -1,7 +1,7 @@
 # coding: utf-8
 
 import logging
-from urlparse import urlparse, urlunparse, parse_qs
+from urlparse import urlparse, parse_qs
 
 LOG = logging.getLogger(__name__)
 
@@ -11,19 +11,6 @@ class FISBrokerResourceConverter:
     @staticmethod
     def getcapabilities_suffix():
         return "request=GetCapabilities&version=2.0.0"
-
-    def normalize_url(self, url):
-        """Normalize URL by sorting query parameters and lowercasing the values
-           (because parameter values are not case sensitive in WMS/WFS)."""
-
-        parsed = urlparse(url)
-        query = parse_qs(parsed.query)
-
-        normalized_query = []
-        for parameter in sorted(query):
-            normalized_query.append("{}={}".format(parameter, query[parameter][0].lower()))
-
-        return urlunparse(parsed._replace(query="&".join(normalized_query)))
 
     def build_service_resource(self, resource):
         """Build either a WMS or WFS service resource from service URL."""
