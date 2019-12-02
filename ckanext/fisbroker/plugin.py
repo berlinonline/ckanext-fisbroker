@@ -16,6 +16,7 @@ from ckanext.spatial.validation.validation import BaseValidator
 from owslib.fes import PropertyIsGreaterThanOrEqualTo
 
 from ckanext.fisbroker.fisbroker_resource_converter import FISBrokerResourceConverter
+from ckanext.fisbroker.helper import uniq_resources_by_url
 
 log = logging.getLogger(__name__)
 
@@ -252,7 +253,7 @@ class FisbrokerPlugin(CSWHarvester):
             converter = FISBrokerResourceConverter()
             resources = [converter.convert_resource(resource) for resource in package_dict['resources']]
             resources = filter(None, resources)
-            package_dict['resources'] = resources
+            package_dict['resources'] = uniq_resources_by_url(resources)
 
             # Preview graphic
             preview_graphics = iso_values.get("browse-graphic", [])

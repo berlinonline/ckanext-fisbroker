@@ -18,6 +18,7 @@ from ckanext.harvest.model import (
 )
 from ckanext.fisbroker.plugin import FisbrokerPlugin
 
+from ckanext.fisbroker.tests.helper import _assert_equal
 from ckanext.fisbroker.tests.xml_file_server import serve
 
 # Start simple HTTP server that serves XML test files
@@ -120,8 +121,11 @@ class TestPlugin(object):
 
         # Package was created
         assert first_package_dict
-        assert first_package_dict['state'] == u'active'
-        assert first_obj.current == True
+        _assert_equal(first_package_dict['state'], u'active')
+        _assert_equal(first_obj.current, True)
+
+        # Package has correct number of resources (uniqing was successful)
+        _assert_equal(len(first_package_dict['resources']), 4)
 
         print(first_package_dict['extras'])
 
