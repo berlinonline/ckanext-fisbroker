@@ -6,11 +6,6 @@ from urlparse import urlparse, urlunparse, parse_qs
 
 LOG = logging.getLogger(__name__)
 
-def _assert_equal(actual, expected):
-    LOG.debug("expected: %s", expected)
-    LOG.debug("actual:   %s", actual)
-    assert expected == actual
-
 def normalize_url(url):
     """Normalize URL by sorting query parameters and lowercasing the values
        (because parameter values are not case sensitive in WMS/WFS)."""
