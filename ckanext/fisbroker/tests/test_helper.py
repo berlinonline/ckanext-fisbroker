@@ -6,8 +6,8 @@ from ckanext.fisbroker.helper import normalize_url, uniq_resources_by_url
 from ckanext.fisbroker.tests.helper import _assert_equal
 
 LOG = logging.getLogger(__name__)
-GETCAPABILITIES_URL_1 = 'https://fbinter.stadt-berlin.de/fb/wfs/data/senstadt/s_boden_wfs1_2015?request=getcapabilities&service=wfs&version=2.0.0'
-GETCAPABILITIES_URL_2 = 'https://fbinter.stadt-berlin.de/fb/wfs/data/senstadt/s_boden_wfs1_2015?service=wfs&version=2.0.0&request=GetCapabilities'
+GETCAPABILITIES_URL_1 = 'https://fbinter.stadt-berlin.de/fb/wfs/data/senstadt/s01_11_07naehr2015?request=getcapabilities&service=wfs&version=2.0.0'
+GETCAPABILITIES_URL_2 = 'https://fbinter.stadt-berlin.de/fb/wfs/data/senstadt/s01_11_07naehr2015?service=wfs&version=2.0.0&request=GetCapabilities'
 
 class TestHelper(object):
     """Test functionality of ckanext.fisbroker.helper"""
@@ -27,17 +27,17 @@ class TestHelper(object):
                 'format': 'WFS'
             } ,
             {
-                'url': 'https://fbinter.stadt-berlin.de/fb?loginkey=alphaDataStart&alphaDataId=s_boden_wfs1_2015@senstadt' ,
+                'url': 'https://fbinter.stadt-berlin.de/fb?loginkey=alphaDataStart&alphaDataId=s01_11_07naehr2015@senstadt' ,
                 'name': 'Serviceseite im FIS-Broker' ,
                 'format': 'HTML'
             } ,
             {
-                'url': 'https://www.stadtentwicklung.berlin.de/umwelt/umweltatlas/id101.htm' ,
+                'url': 'https://www.stadtentwicklung.berlin.de/umwelt/umweltatlas/dd11107.htm' ,
                 'name': 'Inhaltliche Beschreibung' ,
                 'format': 'HTML'
             } ,
             {
-                'url': 'https://fbinter.stadt-berlin.de/fb_daten/beschreibung/umweltatlas/datenformatbeschreibung/Datenformatbeschreibung_bodengesellschaften_und_bodenarten2015.pdf' ,
+                'url': 'https://fbinter.stadt-berlin.de/fb_daten/beschreibung/umweltatlas/datenformatbeschreibung/Datenformatbeschreibung_kriterien_zur_bewertung_der_bodenfunktionen2015.pdf' ,
                 'name': 'Technische Beschreibung' ,
                 'format': 'PDF'
             }
