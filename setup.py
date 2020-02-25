@@ -79,5 +79,6 @@ setup(
     entry_points='''
         [ckan.plugins]
         fisbroker=ckanext.fisbroker.plugin:FisbrokerPlugin
+        dummyharvest=ckanext.fisbroker.tests.test_controller:DummyHarvester
     ''',
 )

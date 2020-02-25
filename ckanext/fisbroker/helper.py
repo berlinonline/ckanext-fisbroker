@@ -2,7 +2,10 @@
 """A collection of helper methods for the CKAN FIS-Broker harvester."""
 
 import logging
+from ckan.model.package import Package
 from urlparse import urlparse, urlunparse, parse_qs
+
+from ckanext.fisbroker import HARVESTER_ID
 
 LOG = logging.getLogger(__name__)
 
@@ -34,3 +37,36 @@ def uniq_resources_by_url(resources):
             uniq_resources.append(resource)
 
     return uniq_resources
+
+def is_fisbroker_package(package_dict):
+    """Return True if package was created by the FIS-Broker harvester,
+       False if not."""
+
+    package = Package.get(package_dict.get('name'))
+    if package:
+        harvester = harvester_for_package(package)
+        if harvester:
+            return bool(harvester.type == HARVESTER_ID)
+    return False
+
+def fisbroker_guid(package_dict):
+    """If there is an extra with the key 'guid', return its value.
+       Otherwise return false."""
+    extras = package_dict.get('extras', False)
+    if extras:
+        for extra in extras:
+            if extra['key'].lower() == 'guid':
+                return extra['value']
+    return False
+
+def dataset_was_harvested(package):
+    """Return True if package was harvested by a harvester,
+       False if not."""
+    return bool(len(package.harvest_objects) > 0)
+
+def harvester_for_package(package):
+    """Return the harvester object that harvested package, else None."""
+    if dataset_was_harvested(package):
+        harvest_object = package.harvest_objects[0]
+        return harvest_object.source
+    return None

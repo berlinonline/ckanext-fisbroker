@@ -1,0 +1,10 @@
+{% ckan_extends %}
+
+{% block content_action %}
+  {% if h.check_access('package_update', {'id':pkg.id }) and h.berlin_is_fisbroker_package(pkg) %}
+    {% if pkg.extras and h.berlin_fisbroker_guid(pkg) %}
+        {% link_for _('Reimport'), controller='ckanext.fisbroker.controller:FISBrokerController', action='reimport_browser', package_id=pkg.id, class_='btn', icon='cloud-download' %}
+    {% endif %}
+  {% endif %}
+  {{ super() }}
+{% endblock %}

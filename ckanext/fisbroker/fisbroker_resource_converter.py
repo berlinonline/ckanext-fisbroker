@@ -36,21 +36,28 @@ class FISBrokerResourceConverter:
     def convert_resource(self, resource):
         """Assign meaningful metadata to FIS-Broker resource objects from a CKAN package_dict, based on their URLs."""
 
+        resource['internal_function'] = 'unknown'
         if "/feed/" in resource['url']:
             resource['name'] = "Atom Feed"
             resource['description'] = "Atom Feed"
             resource['format'] = "Atom"
             resource['main'] = True
+            resource['internal_function'] = 'api'
         elif "/wfs/" in resource['url'] or "/wms/" in resource['url']:
             resource = self.build_service_resource(resource)
             resource['main'] = True
+            resource['internal_function'] = 'api'
         elif resource['url'].startswith('https://fbinter.stadt-berlin.de/fb?loginkey='):
             resource['name'] = "Serviceseite im FIS-Broker"
             resource['format'] = "HTML"
             resource['description'] = "Serviceseite im FIS-Broker"
+            resource['main'] = False
+            resource['internal_function'] = 'web_interface'
         elif 'description' in resource:
             resource['name'] = resource['description']
             resource['main'] = False
+            resource['internal_function'] = 'documentation'
         else:
             resource = None
+
         return resource
