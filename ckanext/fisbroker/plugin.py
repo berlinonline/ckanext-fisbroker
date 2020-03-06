@@ -477,10 +477,10 @@ class FisbrokerPlugin(CSWHarvester):
             if 'date_updated' in reference_dates:
                 extras['date_updated'] = reference_dates['date_updated']
 
+            # resources
+
             converter = FISBrokerResourceConverter()
-            resources = [converter.convert_resource(resource)
-                         for resource in package_dict['resources']]
-            resources = filter(None, resources)
+            resources = converter.convert_all_resources(package_dict['resources'])
             package_dict['resources'] = helpers.uniq_resources_by_url(resources)
 
             # URL
