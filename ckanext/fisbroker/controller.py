@@ -168,9 +168,12 @@ class FISBrokerController(base.BaseController):
 
                             assert obj, obj.content
 
+                            harvester = FisbrokerPlugin()
+                            harvester.force_import = True
                             LOG.debug("import_stage started ...")
-                            FisbrokerPlugin().import_stage(obj)
+                            harvester.import_stage(obj)
                             LOG.debug("import_stage done ...")
+                            harvester.force_import = False
                             Session.refresh(obj)
 
                             harvest_job.status = u'Finished'
