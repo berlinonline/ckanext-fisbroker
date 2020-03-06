@@ -47,6 +47,19 @@ class FISBrokerResourceConverter:
 
         return resource
 
+    def is_fis_broker_service_page(self, url):
+        '''Analyzes url to decide whether it is the service's entry page in FIS-Broker.
+           Returns True or False accordingly.'''
+
+        parsed = urlparse(url)
+        if parsed.netloc == 'fbinter.stadt-berlin.de':
+            if parsed.path.strip('/') == 'fb' or parsed.path.strip('/') == 'fb/index.jsp':
+                if 'loginkey' in parse_qs(parsed.query):
+                    return True
+
+        return False
+
+
     def convert_resource(self, resource):
         """Assign meaningful metadata to FIS-Broker resource objects from a CKAN package_dict, based on their URLs."""
 
@@ -61,7 +74,7 @@ class FISBrokerResourceConverter:
             resource['weight'] = 15
         elif "/wfs/" in resource['url'] or "/wms/" in resource['url']:
             resource = self.convert_service_resource(resource)
-        elif resource['url'].startswith('https://fbinter.stadt-berlin.de/fb?loginkey='):
+        elif self.is_fis_broker_service_page(resource['url']):
             resource['name'] = "Serviceseite im FIS-Broker"
             resource['format'] = "HTML"
             resource['description'] = "Serviceseite im FIS-Broker"
