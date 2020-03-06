@@ -11,6 +11,8 @@ import requests
 
 PORT = 8999
 VALID_GUID = '65715c6e-bbaf-3def-982b-3b5156272da7'
+METADATA_NOW = '2019-11-25T13:18:43'
+METADATA_OLD = '2019-11-23T13:18:43'
 
 def read_responses():
     responses = {}

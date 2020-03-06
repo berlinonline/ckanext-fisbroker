@@ -1,5 +1,6 @@
 """Common code for the various FIS-Broker test classes."""
 
+from dateutil.parser import parse
 import logging
 import warnings
 
@@ -24,7 +25,7 @@ from ckanext.harvest.tests import factories as harvest_factories
 
 from ckanext.fisbroker import HARVESTER_ID
 from ckanext.fisbroker.plugin import FisbrokerPlugin
-from ckanext.fisbroker.tests.mock_fis_broker import start_mock_server
+from ckanext.fisbroker.tests.mock_fis_broker import start_mock_server, VALID_GUID, METADATA_OLD
 from ckanext.fisbroker.tests.xml_file_server import serve
 
 LOG = logging.getLogger(__name__)
@@ -146,8 +147,11 @@ class FisbrokerTestBase(helpers.FunctionalTestBase):
         fb_dataset = ckan_factories.Dataset()
         # this makes sure that fb_dataset is marked as having been
         # harvested by source
-        harvest_object = harvest_factories.HarvestObjectObj(job=job,
+        harvest_object = harvest_factories.HarvestObjectObj(guid=VALID_GUID,
+                                                            job=job,
                                                             source=source,
                                                             package_id=fb_dataset['id'])
+        harvest_object.current = True
+        harvest_object.metadata_modified_date = parse(METADATA_OLD)
 
         return fb_dataset, source, job
