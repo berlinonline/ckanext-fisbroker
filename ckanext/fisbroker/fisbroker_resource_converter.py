@@ -22,13 +22,25 @@ class FISBrokerResourceConverter:
         else:
             return resource
 
+        resource['name'] = "Unspezifizierter {}-Service".format(service_type)
+        resource['description'] = "Unspezifizierter {}-Service".format(service_type)
+
         parsed = urlparse(resource['url'])
         query = parse_qs(parsed.query)
         if not query:
-            resource['url'] += "?service={}&{}".format(service_type.lower(), FISBrokerResourceConverter.getcapabilities_suffix())
+            # this is the service endpoint
+            resource['name'] = "API-Endpunkt des {}-Service".format(service_type)
+            resource['description'] = "API-Endpunkt des {}-Service. Weitere Informationen unter https://www.ogc.org/standards/{}".format(service_type, service_type.lower())
+            resource['internal_function'] = 'api_endpoint'
+        else:
+            method = query.get('request')
+            if method:
+                if method.pop().lower() == "getcapabilities":
+                    resource['name'] = "Endpunkt-Beschreibung des {}-Service".format(service_type)
+                    resource['description'] = "Maschinenlesbare Endpunkt-Beschreibung des {}-Service. Weitere Informationen unter https://www.ogc.org/standards/{}".format(service_type, service_type.lower())
+                    resource['main'] = True
+            resource['internal_function'] = 'api_description'
 
-        resource['name'] = "{} Service".format(service_type)
-        resource['description'] = "{} Service".format(service_type)
         resource['format'] = service_type
 
         return resource
@@ -42,7 +54,7 @@ class FISBrokerResourceConverter:
             resource['description'] = "Atom Feed"
             resource['format'] = "Atom"
             resource['main'] = True
-            resource['internal_function'] = 'api'
+            resource['internal_function'] = 'api_endpoint'
         elif "/wfs/" in resource['url'] or "/wms/" in resource['url']:
             resource = self.convert_service_resource(resource)
         elif resource['url'].startswith('https://fbinter.stadt-berlin.de/fb?loginkey='):
@@ -59,3 +71,35 @@ class FISBrokerResourceConverter:
             resource = None
 
         return resource
+
+    def convert_all_resources(self, resources):
+        '''Assign meaningful metadata to all FIS-Broker resource objects. Ensure there is a `getCapabilities`
+           resource.'''
+
+        resources = [self.convert_resource(resource)
+                     for resource in resources]
+        resources = filter(None, resources)
+
+        res_dict = { resource['internal_function']: resource for resource in resources }
+        if 'api_endpoint' in res_dict and 'api_description' not in res_dict:
+            res_format = res_dict['api_endpoint']['format']
+            if res_format == "WFS":
+                resources.append({
+                    'name': 'Endpunkt-Beschreibung des WFS-Service',
+                    'description': 'Maschinenlesbare Endpunkt-Beschreibung des WFS-Service. Weitere Informationen unter https://www.ogc.org/standards/wfs',
+                    'main': True ,
+                    'format': 'WFS' ,
+                    'internal_function': 'api_description' ,
+                    'url': "{}?request=getcapabilities&service=wfs&version=2.0.0".format(res_dict['api_endpoint']['url'])
+                })
+            elif res_format == "WMS":
+                resources.append({
+                    'name': 'Endpunkt-Beschreibung des WMS-Service',
+                    'description': 'Maschinenlesbare Endpunkt-Beschreibung des WMS-Service. Weitere Informationen unter https://www.ogc.org/standards/wms',
+                    'main': True ,
+                    'format': 'WMS' ,
+                    'internal_function': 'api_description' ,
+                    'url': "{}?request=getcapabilities&service=wms&version=1.3.0".format(res_dict['api_endpoint']['url'])
+                })
+
+        return resources
