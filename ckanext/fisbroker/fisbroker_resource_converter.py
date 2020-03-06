@@ -32,6 +32,7 @@ class FISBrokerResourceConverter:
             resource['name'] = "API-Endpunkt des {}-Service".format(service_type)
             resource['description'] = "API-Endpunkt des {}-Service. Weitere Informationen unter https://www.ogc.org/standards/{}".format(service_type, service_type.lower())
             resource['internal_function'] = 'api_endpoint'
+            resource['weight'] = 15
         else:
             method = query.get('request')
             if method:
@@ -39,7 +40,8 @@ class FISBrokerResourceConverter:
                     resource['name'] = "Endpunkt-Beschreibung des {}-Service".format(service_type)
                     resource['description'] = "Maschinenlesbare Endpunkt-Beschreibung des {}-Service. Weitere Informationen unter https://www.ogc.org/standards/{}".format(service_type, service_type.lower())
                     resource['main'] = True
-            resource['internal_function'] = 'api_description'
+                    resource['internal_function'] = 'api_description'
+                    resource['weight'] = 10
 
         resource['format'] = service_type
 
@@ -49,12 +51,14 @@ class FISBrokerResourceConverter:
         """Assign meaningful metadata to FIS-Broker resource objects from a CKAN package_dict, based on their URLs."""
 
         resource['internal_function'] = 'unknown'
+        resource['weight'] = 200
         if "/feed/" in resource['url']:
             resource['name'] = "Atom Feed"
             resource['description'] = "Atom Feed"
             resource['format'] = "Atom"
             resource['main'] = True
             resource['internal_function'] = 'api_endpoint'
+            resource['weight'] = 15
         elif "/wfs/" in resource['url'] or "/wms/" in resource['url']:
             resource = self.convert_service_resource(resource)
         elif resource['url'].startswith('https://fbinter.stadt-berlin.de/fb?loginkey='):
@@ -63,14 +67,22 @@ class FISBrokerResourceConverter:
             resource['description'] = "Serviceseite im FIS-Broker"
             resource['main'] = False
             resource['internal_function'] = 'web_interface'
+            resource['weight'] = 20
         elif 'description' in resource:
             resource['name'] = resource['description']
             resource['main'] = False
             resource['internal_function'] = 'documentation'
+            resource['weight'] = 30
         else:
             resource = None
 
         return resource
+
+    def sort_resources(self, resources):
+        '''Sort resources in ascending order by `weight` field and and return.'''
+
+        return sorted(resources, key=lambda resource: resource.get('weight', 200))
+
 
     def convert_all_resources(self, resources):
         '''Assign meaningful metadata to all FIS-Broker resource objects. Ensure there is a `getCapabilities`
@@ -90,7 +102,8 @@ class FISBrokerResourceConverter:
                     'main': True ,
                     'format': 'WFS' ,
                     'internal_function': 'api_description' ,
-                    'url': "{}?request=getcapabilities&service=wfs&version=2.0.0".format(res_dict['api_endpoint']['url'])
+                    'url': "{}?request=getcapabilities&service=wfs&version=2.0.0".format(res_dict['api_endpoint']['url']) ,
+                    'weight': 10
                 })
             elif res_format == "WMS":
                 resources.append({
@@ -99,7 +112,8 @@ class FISBrokerResourceConverter:
                     'main': True ,
                     'format': 'WMS' ,
                     'internal_function': 'api_description' ,
-                    'url': "{}?request=getcapabilities&service=wms&version=1.3.0".format(res_dict['api_endpoint']['url'])
+                    'url': "{}?request=getcapabilities&service=wms&version=1.3.0".format(res_dict['api_endpoint']['url']),
+                    'weight': 10
                 })
 
-        return resources
+        return self.sort_resources(resources)
