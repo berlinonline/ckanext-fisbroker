@@ -180,10 +180,11 @@ def generate_title(data_dict):
     resources = package_dict['resources']
 
     main_resources = [resource for resource in resources if resource.get('main', False)]
-    main_resource = main_resources.pop()
-    resource_format = main_resource.get('format', None)
-    if resource_format is not None:
-        title = u"{0} - [{1}]".format(title, resource_format)
+    if main_resources:
+        main_resource = main_resources.pop()
+        resource_format = main_resource.get('format', None)
+        if resource_format is not None:
+            title = u"{0} - [{1}]".format(title, resource_format)
 
     return title
 
