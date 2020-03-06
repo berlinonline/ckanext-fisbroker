@@ -12,8 +12,8 @@ class FISBrokerResourceConverter:
     def getcapabilities_suffix():
         return "request=GetCapabilities&version=2.0.0"
 
-    def build_service_resource(self, resource):
-        """Build either a WMS or WFS service resource from service URL."""
+    def convert_service_resource(self, resource):
+        """Convert wfs and wms service resources."""
 
         if "/wfs/" in resource['url']:
             service_type = "WFS"
@@ -44,9 +44,7 @@ class FISBrokerResourceConverter:
             resource['main'] = True
             resource['internal_function'] = 'api'
         elif "/wfs/" in resource['url'] or "/wms/" in resource['url']:
-            resource = self.build_service_resource(resource)
-            resource['main'] = True
-            resource['internal_function'] = 'api'
+            resource = self.convert_service_resource(resource)
         elif resource['url'].startswith('https://fbinter.stadt-berlin.de/fb?loginkey='):
             resource['name'] = "Serviceseite im FIS-Broker"
             resource['format'] = "HTML"

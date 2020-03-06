@@ -102,7 +102,7 @@ class TestResourceConverter(object):
         url = 'https://fbinter.stadt-berlin.de/fb/wms/senstadt/wmsk_02_14_04gwtemp_60m'
         resource = { 'url': url }
         converter = FISBrokerResourceConverter()
-        service_resource = converter.build_service_resource(resource)
+        service_resource = converter.convert_service_resource(resource)
 
         _assert_equal(service_resource['url'], "{}?service=wms&{}".format(url, FISBrokerResourceConverter.getcapabilities_suffix()))
         _assert_equal(service_resource['name'], "WMS Service")
@@ -115,7 +115,7 @@ class TestResourceConverter(object):
         url = 'https://fbinter.stadt-berlin.de/fb/wfs/data/senstadt/s_boden_wfs1_2015'
         resource = { 'url': url }
         converter = FISBrokerResourceConverter()
-        service_resource = converter.build_service_resource(resource)
+        service_resource = converter.convert_service_resource(resource)
 
         _assert_equal(service_resource['url'], "{}?service=wfs&{}".format(url, FISBrokerResourceConverter.getcapabilities_suffix()))
         _assert_equal(service_resource['name'], "WFS Service")
@@ -128,7 +128,7 @@ class TestResourceConverter(object):
         url = 'https://fbinter.stadt-berlin.de/fb/feed/senstadt/a_SU_LOR'
         resource = { 'url': url }
         converter = FISBrokerResourceConverter()
-        converted_resource = converter.build_service_resource(resource)
+        converted_resource = converter.convert_service_resource(resource)
 
         _assert_equal(converted_resource['url'], url)
         _assert_equal(len(converted_resource), 1)
