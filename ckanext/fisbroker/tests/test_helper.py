@@ -14,7 +14,8 @@ from ckanext.fisbroker.helper import (
     is_fisbroker_package,
     dataset_was_harvested,
     harvester_for_package,
-    fisbroker_guid
+    fisbroker_guid,
+    get_package_object,
 )
 from ckanext.fisbroker.tests import _assert_equal, FisbrokerTestBase, FISBROKER_HARVESTER_CONFIG
 
@@ -69,9 +70,9 @@ class TestHelper(FisbrokerTestBase):
 
     def test_is_fisbroker_package(self):
         fb_dataset_dict, source, job = self._harvester_setup(FISBROKER_HARVESTER_CONFIG)
-        assert is_fisbroker_package(fb_dataset_dict)
+        assert is_fisbroker_package(get_package_object(fb_dataset_dict))
         non_fb_dataset_dict = ckan_factories.Dataset()
-        assert not is_fisbroker_package(non_fb_dataset_dict)
+        assert not is_fisbroker_package(get_package_object(non_fb_dataset_dict))
 
     def test_dataset_was_harvested(self):
         fb_dataset_dict, source, job = self._harvester_setup(FISBROKER_HARVESTER_CONFIG)
@@ -104,5 +105,5 @@ class TestHelper(FisbrokerTestBase):
         fb_dataset_dict = get_action('package_show')(self.context,{'id':fb_dataset.package_id})
         non_fb_dataset_dict = ckan_factories.Dataset()
 
-        _assert_equal(fisbroker_guid(fb_dataset_dict), fisbroker_fixture['object_id'])
-        assert not fisbroker_guid(non_fb_dataset_dict)
+        _assert_equal(fisbroker_guid(get_package_object(fb_dataset_dict)), fisbroker_fixture['object_id'])
+        assert not fisbroker_guid(get_package_object(non_fb_dataset_dict))

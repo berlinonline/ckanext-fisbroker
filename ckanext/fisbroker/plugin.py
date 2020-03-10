@@ -367,6 +367,7 @@ class FisbrokerPlugin(CSWHarvester):
         return {
             'berlin_is_fisbroker_package': helpers.is_fisbroker_package,
             'berlin_fisbroker_guid': helpers.fisbroker_guid,
+            'berlin_package_object': helpers.get_package_object,
         }
 
     # IRoutes:
