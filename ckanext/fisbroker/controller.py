@@ -23,7 +23,11 @@ from ckanext.harvest.model import (
 )
 
 from ckanext.fisbroker import HARVESTER_ID
-from ckanext.fisbroker.helper import dataset_was_harvested, harvester_for_package
+from ckanext.fisbroker.helper import (
+    dataset_was_harvested,
+    harvester_for_package,
+    fisbroker_guid,
+)
 from ckanext.fisbroker.plugin import FisbrokerPlugin
 
 LOG = logging.getLogger(__name__)
@@ -36,6 +40,7 @@ ERROR_NOT_HARVESTED_BY_FISBROKER = 6
 ERROR_NO_GUID = 7
 ERROR_NO_CONNECTION = 8
 ERROR_NOT_FOUND_IN_FISBROKER = 9
+ERROR_DURING_IMPORT = 10
 ERROR_UNEXPECTED = 20
 
 
@@ -46,9 +51,10 @@ ERROR_MESSAGES = {
     ERROR_NOT_FOUND_IN_CKAN: 'No such package found.',
     ERROR_NOT_HARVESTED: 'Package could not be re-imported because it was not created by a harvester.',
     ERROR_NOT_HARVESTED_BY_FISBROKER: "Package could not be re-imported because it was not harvested by harvester '{}'.".format(HARVESTER_ID),
-    ERROR_NO_GUID: "Package could not be re-imported because it has no 'guid' extra.",
+    ERROR_NO_GUID: "Package could not be re-imported because FIS-Broker GUID could not be determined.",
     ERROR_NO_CONNECTION: "Failed to establish connection to FIS-Broker service at {} ({}).",
     ERROR_NOT_FOUND_IN_FISBROKER: "Package could not be re-imported because GUID '{}' was not found on FIS-Broker.",
+    ERROR_DURING_IMPORT: "Package could not be re-imported because the FIS-Broker data is no longer valid. Reason: {}. Package will be deactivated.",
     ERROR_UNEXPECTED: 'Unexpected error'
 }
 
@@ -129,7 +135,7 @@ class FISBrokerController(base.BaseController):
             harvester_url = harvester.url
             harvester_type = harvester.type
             if harvester_type == HARVESTER_ID:
-                fb_id = package.extras.get('guid')
+                fb_id = fisbroker_guid(package)
                 if fb_id:
                     try:
                         csw = CatalogueServiceWeb(harvester_url)
@@ -171,8 +177,18 @@ class FISBrokerController(base.BaseController):
                             harvester = FisbrokerPlugin()
                             harvester.force_import = True
                             LOG.debug("import_stage started ...")
-                            harvester.import_stage(obj)
-                            LOG.debug("import_stage done ...")
+                            status = harvester.import_stage(obj)
+                            LOG.debug("import_stage done: %s ...", status)
+                            rejection_reason = self._dataset_rejected(obj)
+                            if rejection_reason:
+                                response_code = 200
+                                response_data = {
+                                    "success": False,
+                                    "error": get_error_dict(ERROR_DURING_IMPORT)
+                                }
+                                message = response_data['error']['message'].format(rejection_reason)
+                                response_data['error']['message'] = message
+
                             harvester.force_import = False
                             Session.refresh(obj)
 
@@ -202,6 +218,17 @@ class FISBrokerController(base.BaseController):
         response_data['package_id'] = package_id
 
         return self._finish(response_code, response_data, direct_call)
+
+    def _dataset_rejected(self, harvest_object):
+        """Look at harvest_object to see if the dataset was rejected during
+           import. If rejected, return the reason, if not, return None."""
+
+        for extra in harvest_object.extras:
+            if extra.key == 'error':
+                return extra.value
+
+        return None
+
 
     def _finish(self, status_int, response_data=None, direct_call=False):
         '''When a controller method has completed, call this method

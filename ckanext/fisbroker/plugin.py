@@ -402,6 +402,7 @@ class FisbrokerPlugin(CSWHarvester):
         https://github.com/ckan/ckanext-spatial/blob/master/ckanext/spatial/interfaces.py
         '''
         LOG.debug("--------- get_package_dict ----------")
+        LOG.debug("context: %s", context)
 
         if hasattr(data_dict, '__getitem__'):
 
@@ -413,14 +414,16 @@ class FisbrokerPlugin(CSWHarvester):
             # checking if marked for Open Data
             if not marked_as_opendata(data_dict):
                 LOG.debug("no 'opendata' tag, skipping dataset ...")
+                context['error'] = json.dumps({ 'code': 1, 'description': 'not tagged as open data'})
                 return 'skip'
             LOG.debug("this is tagged 'opendata', continuing ...")
 
             # we're only interested in service resources
             if not marked_as_service_resource(data_dict):
                 LOG.debug("this is not a service resource, skipping dataset ...")
+                context['error'] = json.dumps({'code': 2, 'description': 'not a service resource'})
                 return 'skip'
-            LOG.debug("this is a service resource, continuing ...")
+            LOG.debug("this is a not service resource, continuing ...")
 
             extras = self.extras_dict(package_dict['extras'])
 
@@ -438,12 +441,14 @@ class FisbrokerPlugin(CSWHarvester):
                 package_dict['author'] = contact_info['author']
             else:
                 LOG.error('could not determine responsible organisation name, skipping ...')
+                context['error'] = json.dumps({'code': 3, 'description': 'no organisation name'})
                 return 'skip'
 
             if 'maintainer_email' in contact_info:
                 package_dict['maintainer_email'] = contact_info['maintainer_email']
             else:
                 LOG.error('could not determine responsible organisation email, skipping ...')
+                context['error'] = json.dumps({'code': 4, 'description': 'no responsible organisation email'})
                 return 'skip'
 
             if 'maintainer' in contact_info:
@@ -458,6 +463,7 @@ class FisbrokerPlugin(CSWHarvester):
 
             if 'license_id' not in license_and_attribution:
                 LOG.error('could not determine license code, skipping ...')
+                context['error'] = json.dumps({'code': 5, 'description': 'could not determine license code'})
                 return 'skip'
 
             package_dict['license_id'] = license_and_attribution['license_id']
@@ -471,6 +477,7 @@ class FisbrokerPlugin(CSWHarvester):
 
             if 'date_released' not in reference_dates:
                 LOG.error('could not get anything for date_released from ISO values, skipping ...')
+                context['error'] = json.dumps({'code': 6, 'description': 'no release date'})
                 return 'skip'
 
             extras['date_released'] = reference_dates['date_released']
