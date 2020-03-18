@@ -15,7 +15,7 @@ from ckanext.spatial.interfaces import ISpatialHarvester
 from ckanext.spatial.harvesters.csw import CSWHarvester
 from ckanext.spatial.validation.validation import BaseValidator
 from ckanext.fisbroker import HARVESTER_ID
-from ckanext.fisbroker.fisbroker_resource_converter import FISBrokerResourceConverter
+from ckanext.fisbroker.fisbroker_resource_annotator import FISBrokerResourceAnnotator
 import ckanext.fisbroker.helper as helpers
 
 LOG = logging.getLogger(__name__)
@@ -487,8 +487,8 @@ class FisbrokerPlugin(CSWHarvester):
 
             # resources
 
-            converter = FISBrokerResourceConverter()
-            resources = converter.convert_all_resources(package_dict['resources'])
+            annotator = FISBrokerResourceAnnotator()
+            resources = annotator.annotate_all_resources(package_dict['resources'])
             package_dict['resources'] = helpers.uniq_resources_by_url(resources)
 
             # URL
