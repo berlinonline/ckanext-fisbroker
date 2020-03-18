@@ -145,7 +145,12 @@ class TestReimport(FisbrokerTestBase):
         fb_dataset_dict, source, job = self._harvester_setup(FISBROKER_HARVESTER_CONFIG)
         # datasets created in this way have no extras set, so also no 'guid'
         package_id = fb_dataset_dict['id']
-        response = self.app.get("/api/harvest/reimport?id={}".format(package_id), headers={'Accept':'application/json'}, expect_errors=True)
+        response = self.app.get(
+            "/api/harvest/reimport?id={}".format(package_id),
+            headers={'Accept':'application/json'},
+            expect_errors=True,
+            extra_environ={'REMOTE_USER': self.context['user'].encode('ascii')}
+        )
         _assert_equal(response.status_int, 500)
         content = json.loads(response.body)
         _assert_equal(content['error']['code'], controller.ERROR_NO_GUID)
@@ -179,7 +184,12 @@ class TestReimport(FisbrokerTestBase):
         fb_dataset_dict['extras'].append({'key': 'guid', 'value': 'invalid_guid'})
         package_update(self.context, fb_dataset_dict)
         package_id = fb_dataset_dict['id']
-        response = self.app.get("/api/harvest/reimport?id={}".format(package_id), headers={'Accept':'application/json'}, expect_errors=True)
+        response = self.app.get(
+            "/api/harvest/reimport?id={}".format(package_id),
+            headers={'Accept':'application/json'},
+            expect_errors=True,
+            extra_environ={'REMOTE_USER': self.context['user'].encode('ascii')}
+        )
         _assert_equal(response.status_int, 404)
         content = json.loads(response.body)
         _assert_equal(content['error']['code'], controller.ERROR_NOT_FOUND_IN_FISBROKER)
