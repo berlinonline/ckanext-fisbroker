@@ -141,13 +141,13 @@ class FisbrokerTestBase(helpers.FunctionalTestBase):
 
         return obj
 
-    def _harvester_setup(self, source_config):
+    def _harvester_setup(self, source_config, fb_guid=VALID_GUID):
         # create a harvest source and matching job
         source, job = self._create_source_and_job(source_config)
         fb_dataset = ckan_factories.Dataset()
         # this makes sure that fb_dataset is marked as having been
         # harvested by source
-        harvest_object = harvest_factories.HarvestObjectObj(guid=VALID_GUID,
+        harvest_object = harvest_factories.HarvestObjectObj(guid=fb_guid,
                                                             job=job,
                                                             source=source,
                                                             package_id=fb_dataset['id'])

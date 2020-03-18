@@ -139,10 +139,10 @@ class TestReimport(FisbrokerTestBase):
         _assert_equal(content['error']['code'], controller.ERROR_NOT_HARVESTED_BY_FISBROKER)
 
     def test_can_only_reimport_with_guid(self):
-        '''If the package we try to reimport does not have an extra called 'guid',
+        '''If we cannot determine a FIS-Broker guid for the package we try to reimport 
            return an HTTP 500 with internal error code 7.'''
 
-        fb_dataset_dict, source, job = self._harvester_setup(FISBROKER_HARVESTER_CONFIG)
+        fb_dataset_dict, source, job = self._harvester_setup(FISBROKER_HARVESTER_CONFIG, fb_guid=None)
         # datasets created in this way have no extras set, so also no 'guid'
         package_id = fb_dataset_dict['id']
         response = self.app.get(
@@ -179,9 +179,7 @@ class TestReimport(FisbrokerTestBase):
         '''If FIS-Broker service replies that no record with the given guid exisits, return an
            HTTP 404 with internal error code 9.'''
 
-        fb_dataset_dict, source, job = self._harvester_setup(FISBROKER_HARVESTER_CONFIG)
-        # add the required guid extra
-        fb_dataset_dict['extras'].append({'key': 'guid', 'value': 'invalid_guid'})
+        fb_dataset_dict, source, job = self._harvester_setup(FISBROKER_HARVESTER_CONFIG, fb_guid='invalid_guid')
         package_update(self.context, fb_dataset_dict)
         package_id = fb_dataset_dict['id']
         response = self.app.get(
