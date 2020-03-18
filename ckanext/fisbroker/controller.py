@@ -157,11 +157,9 @@ class FISBrokerController(base.BaseController):
                                 'session': model.Session,
                                 'user': c.user
                             }
-                            LOG.debug("context created ...")
 
                             job_dict = toolkit.get_action('harvest_job_create')(context,{'source_id':harvester.id})
                             harvest_job = HarvestJob.get(job_dict['id'])
-                            LOG.debug("harvest_job created ...")
                             assert harvest_job
 
                             obj = HarvestObject(guid=fb_id,
@@ -169,16 +167,13 @@ class FISBrokerController(base.BaseController):
                                                 content=record.xml,
                                                 package_id=package_id,
                                                 extras=[HarvestObjectExtra(key='status',value='change')])
-                            LOG.debug("harvest_object created ...")
                             obj.save()
 
                             assert obj, obj.content
 
                             harvester = FisbrokerPlugin()
                             harvester.force_import = True
-                            LOG.debug("import_stage started ...")
                             status = harvester.import_stage(obj)
-                            LOG.debug("import_stage done: %s ...", status)
                             rejection_reason = self._dataset_rejected(obj)
                             if rejection_reason:
                                 response_code = 200
