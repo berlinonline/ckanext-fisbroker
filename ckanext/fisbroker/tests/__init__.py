@@ -154,4 +154,7 @@ class FisbrokerTestBase(helpers.FunctionalTestBase):
         harvest_object.current = True
         harvest_object.metadata_modified_date = parse(METADATA_OLD)
 
+        job.status = u'Finished'
+        job.save()
+
         return fb_dataset, source, job
