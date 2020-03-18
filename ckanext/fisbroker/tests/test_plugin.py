@@ -449,7 +449,7 @@ class TestPlugin(FisbrokerTestBase):
         _assert_equal(package_dict['extras']['date_updated'], "2018-08-13")
 
         # Package has correct number of resources (i.e., uniqing was successful)
-        _assert_equal(len(package_dict['resources']), 4)
+        _assert_equal(len(package_dict['resources']), 5)
 
         # url
         _assert_equal(
