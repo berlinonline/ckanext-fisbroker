@@ -26,9 +26,8 @@ from ckanext.harvest.tests import factories
 from ckanext.fisbroker import HARVESTER_ID
 import ckanext.fisbroker.controller as controller
 from ckanext.fisbroker.controller import get_error_dict, ERROR_MESSAGES
-from ckanext.fisbroker.helper import is_fisbroker_package
 from ckanext.fisbroker.tests import _assert_equal, _assert_not_equal, FisbrokerTestBase, FISBROKER_HARVESTER_CONFIG
-from ckanext.fisbroker.tests.mock_fis_broker import start_mock_server, VALID_GUID
+from ckanext.fisbroker.tests.mock_fis_broker import VALID_GUID
 
 LOG = logging.getLogger(__name__)
 FISBROKER_PLUGIN = u'fisbroker'
