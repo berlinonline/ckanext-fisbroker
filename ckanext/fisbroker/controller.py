@@ -141,8 +141,10 @@ class FISBrokerController(base.BaseController):
                         csw = CatalogueServiceWeb(harvester_url)
                         # query connector to get resource document
                         csw.getrecordbyid([fb_id], outputschema=namespaces['gmd'])
+
                         # show resource document
                         record = csw.records.get(fb_id, None)
+                        LOG.debug("got record: %s", record)
                         if record:
                             response_code = 200
                             response_data = {

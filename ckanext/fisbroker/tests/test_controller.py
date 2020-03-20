@@ -25,9 +25,9 @@ from ckanext.harvest.model import HarvestSource
 from ckanext.harvest.tests import factories
 from ckanext.fisbroker import HARVESTER_ID
 import ckanext.fisbroker.controller as controller
-from ckanext.fisbroker.controller import get_error_dict, ERROR_MESSAGES
+from ckanext.fisbroker.controller import get_error_dict, ERROR_MESSAGES, ERROR_DURING_IMPORT
 from ckanext.fisbroker.tests import _assert_equal, _assert_not_equal, FisbrokerTestBase, FISBROKER_HARVESTER_CONFIG
-from ckanext.fisbroker.tests.mock_fis_broker import VALID_GUID
+from ckanext.fisbroker.tests.mock_fis_broker import VALID_GUID, INVALID_GUID
 
 LOG = logging.getLogger(__name__)
 FISBROKER_PLUGIN = u'fisbroker'
@@ -97,8 +97,6 @@ class TestReimport(FisbrokerTestBase):
         fb_dataset_dict, source, job = self._harvester_setup(FISBROKER_HARVESTER_CONFIG)
         job.status = u'Finished'
         job.save()
-        # add the required guid extra
-        fb_dataset_dict['extras'].append({'key': 'guid', 'value': VALID_GUID})
         package_update(self.context, fb_dataset_dict)
         package_id = fb_dataset_dict['id']
         response = self.app.get(
@@ -165,8 +163,6 @@ class TestReimport(FisbrokerTestBase):
             'url' : "http://somewhere.over.the.ra.invalid/csw"
         }
         fb_dataset_dict, source, job = self._harvester_setup(unreachable_config)
-        # add the required guid extra
-        fb_dataset_dict['extras'].append({'key': 'guid', 'value': 'abcdef'})
         package_update(self.context, fb_dataset_dict)
         package_id = fb_dataset_dict['id']
         response = self.app.get("/api/harvest/reimport?id={}".format(package_id), headers={'Accept':'application/json'}, expect_errors=True)
@@ -198,8 +194,6 @@ class TestReimport(FisbrokerTestBase):
         fb_dataset_dict, source, job = self._harvester_setup(FISBROKER_HARVESTER_CONFIG)
         job.status = u'Finished'
         job.save()
-        # add the required guid extra
-        fb_dataset_dict['extras'].append({'key': 'guid', 'value': VALID_GUID})
         package_update(self.context, fb_dataset_dict)
         package_id = fb_dataset_dict['id']
         package = Package.get(package_id)
@@ -225,8 +219,6 @@ class TestReimport(FisbrokerTestBase):
         fb_dataset_dict, source, job = self._harvester_setup(FISBROKER_HARVESTER_CONFIG)
         job.status = u'Finished'
         job.save()
-        # add the required guid extra
-        fb_dataset_dict['extras'].append({'key': 'guid', 'value': VALID_GUID})
         package_update(self.context, fb_dataset_dict)
         package_id = fb_dataset_dict['id']
 
@@ -237,6 +229,32 @@ class TestReimport(FisbrokerTestBase):
                 expect_errors=True
             )
 
+    def test_reimport_invalid_dataset_triggers_deletion(self):
+        """If a previously harvested dataset is reimported, it should trigger
+           its deletion (change state to deleted)."""
+
+        fb_dataset_dict, source, job = self._harvester_setup(
+            FISBROKER_HARVESTER_CONFIG, fb_guid=INVALID_GUID)
+        job.status = u'Finished'
+        job.save()
+        package_update(self.context, fb_dataset_dict)
+        package_id = fb_dataset_dict['id']
+
+        response = self.app.get(
+            url="/api/harvest/reimport?id={}".format(package_id),
+            headers={'Accept': 'application/json'},
+            extra_environ={'REMOTE_USER': self.context['user'].encode('ascii')}
+        )
+
+        # assert successful HTTP response
+        _assert_equal(response.status_int, 200)
+        content = json.loads(response.body)
+
+        # assert failure marker in resonse JSON
+        assert not content['success']
+        _assert_equal(content['error']['code'], ERROR_DURING_IMPORT)
+        package = Package.get(package_id)
+        _assert_equal(package.state, 'deleted')
 
 class DummyHarvester(SingletonPlugin):
     '''A dummy harvester for testing purposes.'''
