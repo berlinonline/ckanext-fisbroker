@@ -39,13 +39,13 @@
     <ows:Operation name="GetCapabilities">
       <ows:DCP>
         <ows:HTTP>
-          <ows:Get xlink:href="https://fbinter.stadt-berlin.de/fb/csw" />
-          <ows:Post xlink:href="https://fbinter.stadt-berlin.de/fb/csw">
+          <ows:Get xlink:href="{BASE_URL}" />
+          <ows:Post xlink:href="{BASE_URL}">
             <ows:Constraint name="PostEncoding">
               <ows:Value>XML</ows:Value>
             </ows:Constraint>
           </ows:Post>
-          <ows:Post xlink:href="https://fbinter.stadt-berlin.de/fb/csw/soap/">
+          <ows:Post xlink:href="{BASE_URL}/soap/">
             <ows:Constraint name="PostEncoding">
               <ows:Value>SOAP</ows:Value>
             </ows:Constraint>
@@ -56,13 +56,13 @@
     <ows:Operation name="DescribeRecord">
       <ows:DCP>
         <ows:HTTP>
-          <ows:Get xlink:href="https://fbinter.stadt-berlin.de/fb/csw" />
-          <ows:Post xlink:href="https://fbinter.stadt-berlin.de/fb/csw">
+          <ows:Get xlink:href="{BASE_URL}" />
+          <ows:Post xlink:href="{BASE_URL}">
             <ows:Constraint name="PostEncoding">
               <ows:Value>XML</ows:Value>
             </ows:Constraint>
           </ows:Post>
-          <ows:Post xlink:href="https://fbinter.stadt-berlin.de/fb/csw/soap/">
+          <ows:Post xlink:href="{BASE_URL}/soap/">
             <ows:Constraint name="PostEncoding">
               <ows:Value>SOAP</ows:Value>
             </ows:Constraint>
@@ -86,13 +86,13 @@
     <ows:Operation name="GetDomain">
       <ows:DCP>
         <ows:HTTP>
-          <ows:Get xlink:href="https://fbinter.stadt-berlin.de/fb/csw" />
-          <ows:Post xlink:href="https://fbinter.stadt-berlin.de/fb/csw">
+          <ows:Get xlink:href="{BASE_URL}" />
+          <ows:Post xlink:href="{BASE_URL}">
             <ows:Constraint name="PostEncoding">
               <ows:Value>XML</ows:Value>
             </ows:Constraint>
           </ows:Post>
-          <ows:Post xlink:href="https://fbinter.stadt-berlin.de/fb/csw/soap/">
+          <ows:Post xlink:href="{BASE_URL}/soap/">
             <ows:Constraint name="PostEncoding">
               <ows:Value>SOAP</ows:Value>
             </ows:Constraint>
@@ -103,13 +103,13 @@
     <ows:Operation name="GetRecords">
       <ows:DCP>
         <ows:HTTP>
-          <ows:Get xlink:href="https://fbinter.stadt-berlin.de/fb/csw" />
-          <ows:Post xlink:href="https://fbinter.stadt-berlin.de/fb/csw">
+          <ows:Get xlink:href="{BASE_URL}" />
+          <ows:Post xlink:href="{BASE_URL}">
             <ows:Constraint name="PostEncoding">
               <ows:Value>XML</ows:Value>
             </ows:Constraint>
           </ows:Post>
-          <ows:Post xlink:href="https://fbinter.stadt-berlin.de/fb/csw/soap/">
+          <ows:Post xlink:href="{BASE_URL}/soap/">
             <ows:Constraint name="PostEncoding">
               <ows:Value>SOAP</ows:Value>
             </ows:Constraint>
@@ -166,13 +166,13 @@
     <ows:Operation name="GetRecordById">
       <ows:DCP>
         <ows:HTTP>
-          <ows:Get xlink:href="https://fbinter.stadt-berlin.de/fb/csw" />
-          <ows:Post xlink:href="https://fbinter.stadt-berlin.de/fb/csw">
+          <ows:Get xlink:href="{BASE_URL}" />
+          <ows:Post xlink:href="{BASE_URL}">
             <ows:Constraint name="PostEncoding">
               <ows:Value>XML</ows:Value>
             </ows:Constraint>
           </ows:Post>
-          <ows:Post xlink:href="https://fbinter.stadt-berlin.de/fb/csw/soap/">
+          <ows:Post xlink:href="{BASE_URL}/soap/">
             <ows:Constraint name="PostEncoding">
               <ows:Value>SOAP</ows:Value>
             </ows:Constraint>
@@ -196,7 +196,7 @@
     <ows:Operation name="Transaction">
       <ows:DCP>
         <ows:HTTP>
-          <ows:Post xlink:href="https://fbinter.stadt-berlin.de/fb/csw">
+          <ows:Post xlink:href="{BASE_URL}">
             <ows:Constraint name="PostEncoding">
               <ows:Value>XML</ows:Value>
             </ows:Constraint>
@@ -207,8 +207,8 @@
     <ows:Operation name="Harvest">
       <ows:DCP>
         <ows:HTTP>
-          <ows:Get xlink:href="https://fbinter.stadt-berlin.de/fb/csw" />
-          <ows:Post xlink:href="https://fbinter.stadt-berlin.de/fb/csw">
+          <ows:Get xlink:href="{BASE_URL}" />
+          <ows:Post xlink:href="{BASE_URL}">
             <ows:Constraint name="PostEncoding">
               <ows:Value>XML</ows:Value>
             </ows:Constraint>

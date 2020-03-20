@@ -1,6 +1,6 @@
 # coding: utf-8
 
-import json
+import logging
 import os
 import re
 from urlparse import urlparse, parse_qs
@@ -10,9 +10,13 @@ from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 import requests
 
 PORT = 8999
-VALID_GUID = '65715c6e-bbaf-3def-982b-3b5156272da7'
+CSW_PATH = "/csw"
+VALID_GUID =   '65715c6e-bbaf-3def-982b-3b5156272da7'
+INVALID_GUID = '65715c6e-bbaf-3def-982b-3b5156272da8'
 METADATA_NOW = '2019-11-25T13:18:43'
 METADATA_OLD = '2019-11-23T13:18:43'
+
+LOG = logging.getLogger(__name__)
 
 def read_responses():
     responses = {}
@@ -21,6 +25,7 @@ def read_responses():
         'missing_id' ,
         'no_record_found' ,
         VALID_GUID ,
+        INVALID_GUID
     ]
     responses['records'] = {}
     record_pattern = re.compile(r'^([a-z0-9]){8}-([a-z0-9]){4}-([a-z0-9]){4}-([a-z0-9]){4}-([a-z0-9]){12}$')
@@ -39,7 +44,7 @@ class MockFISBroker(BaseHTTPRequestHandler):
 
     def do_GET(self):
         parsed_url = urlparse(self.path)
-        if parsed_url.path == "/csw":
+        if parsed_url.path == CSW_PATH:
             query = parse_qs(parsed_url.query)
 
             csw_request = query.get('request')
@@ -50,6 +55,9 @@ class MockFISBroker(BaseHTTPRequestHandler):
                     response_code = requests.codes.ok
                     content_type = 'text/xml; charset=utf-8'
                     response_content = RESPONSES['getcapabilities']
+                    # TODO: how do I set the protocol dynamically?
+                    base_url = "http://{}:{}{}".format(self.server.server_name, self.server.server_port, CSW_PATH)
+                    response_content = response_content.replace("{BASE_URL}", base_url)
                 elif csw_request == "getrecordbyid":
                     record_id = query.get('id')
                     if record_id:
