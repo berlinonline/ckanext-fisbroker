@@ -19,6 +19,8 @@ from ckanext.fisbroker.fisbroker_resource_annotator import FISBrokerResourceAnno
 import ckanext.fisbroker.helper as helpers
 
 LOG = logging.getLogger(__name__)
+TIMEDELTA_DEFAULT = 0
+TIMEOUT_DEFAULT = 20
 
 # https://fbinter.stadt-berlin.de/fb/csw
 
@@ -275,18 +277,16 @@ class FisbrokerPlugin(CSWHarvester):
     def get_timeout(self):
         '''Get the `timeout` config as a string (timeout threshold for requests 
            to FIS-Broker).'''
-        timeout = 20  # default
         if 'timeout' in self.source_config:
-            timeout = int(self.source_config['timeout'])
-        return timeout
+            return int(self.source_config['timeout'])
+        return TIMEOUT_DEFAULT
 
     def get_timedelta(self):
         '''Get the `timedelta` config as a string (timezone difference between
            FIS-Broker server and harvester server).'''
-        _timedelta = 0  # default
         if 'timedelta' in self.source_config:
-            _timedelta = int(self.source_config['timedelta'])
-        return _timedelta
+            return int(self.source_config['timedelta'])
+        return TIMEDELTA_DEFAULT
 
     # IHarvester
 
