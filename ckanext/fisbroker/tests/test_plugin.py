@@ -23,7 +23,9 @@ from ckanext.fisbroker.plugin import (
     extract_reference_dates,
     extract_url,
     extract_preview_markup,
-    extras_as_list
+    extras_as_list,
+    TIMEOUT_DEFAULT,
+    TIMEDELTA_DEFAULT,
 )
 from ckanext.fisbroker.tests import FisbrokerTestBase, _assert_equal
 
@@ -498,3 +500,57 @@ class TestPlugin(FisbrokerTestBase):
         config = '{ "timedelta": "two" }'
         with assert_raises(ValueError):
             assert FisbrokerPlugin().validate_config(config)
+
+    def test_undefined_import_since_is_none(self):
+        '''Test that an undefined `import_since` config returns None.'''
+
+        FisbrokerPlugin().source_config = {}
+        import_since = FisbrokerPlugin().get_import_since_date(None)
+        _assert_equal(import_since, None)
+
+    def test_import_since_big_bang_means_none(self):
+        '''Test that 'big_bang' for the `import_since` config means
+           returns None.'''
+
+        FisbrokerPlugin().source_config = { 'import_since': "big_bang" }
+        import_since = FisbrokerPlugin().get_import_since_date(None)
+        _assert_equal(import_since, None)
+
+    def test_import_since_regular_value_returned_unchanged(self):
+        '''Test that any value other than 'big_bang' or 'last_changed' for
+           `import_since` is returned unchanged.'''
+
+        FisbrokerPlugin().source_config = {'import_since': "2020-03-01"}
+        import_since = FisbrokerPlugin().get_import_since_date(None)
+        _assert_equal(import_since, "2020-03-01")
+
+    def test_undefined_timeout_gives_default(self):
+        '''Test that an undefined `timeout` config returns the default.'''
+
+        FisbrokerPlugin().source_config = {}
+        timeout = FisbrokerPlugin().get_timeout()
+        _assert_equal(timeout, TIMEOUT_DEFAULT)
+
+    def test_undefined_time_delta_gives_default(self):
+        '''Test that an undefined `timedelta` config returns the default.'''
+
+        FisbrokerPlugin().source_config = {}
+        timedelta = FisbrokerPlugin().get_timedelta()
+        _assert_equal(timedelta, TIMEDELTA_DEFAULT)
+
+    def test_timeout_config_returned_as_int(self):
+        '''Test that get_timeout() always returns an int, if the `timeout``
+           config is set.'''
+
+        FisbrokerPlugin().source_config = { 'timeout': '100' }
+        timeout = FisbrokerPlugin().get_timeout()
+        _assert_equal(timeout, 100)
+
+    def test_timedelta_config_returned_as_int(self):
+        '''Test that get_timedelta() always returns an int, if the `timedelta``
+           config is set.'''
+
+        FisbrokerPlugin().source_config = { 'timedelta': '1' }
+        timedelta = FisbrokerPlugin().get_timedelta()
+        _assert_equal(timedelta, 1)
+
