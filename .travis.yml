@@ -1,8 +1,8 @@
+os: linux
 dist: trusty
 group: deprecated-2017Q4
 
 language: python
-sudo: required
 python:
     - "2.7"
 env:
