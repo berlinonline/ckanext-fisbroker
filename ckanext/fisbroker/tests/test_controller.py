@@ -250,7 +250,7 @@ class TestReimport(FisbrokerTestBase):
         _assert_equal(response.status_int, 200)
         content = json.loads(response.body)
 
-        # assert failure marker in resonse JSON
+        # assert failure marker in response JSON
         assert not content['success']
         _assert_equal(content['error']['code'], ERROR_DURING_IMPORT)
         package = Package.get(package_id)
