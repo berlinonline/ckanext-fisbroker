@@ -13,8 +13,6 @@
 ckanext-fisbroker
 =================
 
-Developed by Knud Möller for `BerlinOnline <http://berlinonline.de>`_.
-
 This is an extension of the CWS Harvester from `ckanext-spatial <https://github.com/ckan/ckanext-spatial>`_, intended to harvest the Berlin Geoportal `FIS-Broker <http://www.stadtentwicklung.berlin.de/geoinformation/fis-broker/>`_. It mainly adapts the harvesting to extract metadata conforming to the `Berlin Open Data Schema <https://datenregister.berlin.de/schema/berlin_od_schema.json>`_.
 
 -------------
@@ -29,3 +27,12 @@ Configuration
 - ``timedelta``: The harvest jobs' timestamps are logged in UTC, while the harvest source might use a different timezone. This setting specifies the delta in hours between UTC and the harvest source's timezone (will influence the timestamp retrieved by ``last_error_free``). Default is ``0``.
 
 
+Developed by Knud Möller for `BerlinOnline <http://berlinonline.de>`_.
+
+-------------------
+Copying and License
+-------------------
+
+This material is copyright © 2016 – 2020 Knud Möller,  `BerlinOnline Stadtportal GmbH & Co. KG <https://berlinonline.net>`_.
+
+It is open and licensed under the `MIT License <LICENSE>`_.
