@@ -7,13 +7,14 @@ echo "Installing the packages that CKAN requires ..."
 sudo apt-get update -qq
 sudo apt-get install solr-jetty
 
-echo "Cloning CKAN source ($CKANVERSION) from repository ..."
+echo "Cloning CKAN source from repository ..."
 git clone https://github.com/ckan/ckan
 cd ckan
 if [ $CKANVERSION == 'master' ]
 then
     echo "CKAN version: master"
 else
+    echo "checking out CKAN version $CKANVERSION ..."
     CKAN_TAG=$(git tag | grep ^ckan-$CKANVERSION | sort --version-sort | tail -n 1)
     git checkout $CKAN_TAG
     echo "CKAN version: ${CKAN_TAG#ckan-}"
@@ -34,6 +35,11 @@ fi
 
 echo "Installing CKAN and its Python dependencies ..."
 python setup.py develop
+# To avoid error:
+# Error: could not determine PostgreSQL version from '10.1'
+# we need newer psycopg2 and corresponding exc name change
+sed -i -e 's/psycopg2==2.4.5/psycopg2==2.8.2/' requirements.txt
+sed -i -e 's/except sqlalchemy.exc.InternalError:/except (sqlalchemy.exc.InternalError, sqlalchemy.exc.DBAPIError):/' ckan/config/environment.py
 pip install -r requirements.txt
 pip install -r dev-requirements.txt
 cd -
@@ -59,7 +65,7 @@ echo "Installing $PLUGIN and its requirements ..."
 python setup.py develop
 pip install -r travis-requirements.txt
 
-echo "Moving test.ini into a subdir..."
+echo "Moving test.ini into a subdir ..."
 mkdir subdir
 mv test.ini subdir
 
