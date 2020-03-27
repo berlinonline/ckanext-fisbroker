@@ -27,8 +27,6 @@ Configuration
 - ``timedelta``: The harvest jobs' timestamps are logged in UTC, while the harvest source might use a different timezone. This setting specifies the delta in hours between UTC and the harvest source's timezone (will influence the timestamp retrieved by ``last_error_free``). Default is ``0``.
 
 
-Developed by Knud Möller for `BerlinOnline <http://berlinonline.de>`_.
-
 -------------------
 Copying and License
 -------------------
