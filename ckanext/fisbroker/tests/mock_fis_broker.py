@@ -1,4 +1,8 @@
 # coding: utf-8
+"""
+    Code for mocking a FIS-Broker for testing.
+"""
+
 
 import logging
 import os
@@ -19,6 +23,8 @@ METADATA_OLD = '2019-11-23T13:18:43'
 LOG = logging.getLogger(__name__)
 
 def read_responses():
+    """Read canned mock responses into a dictionary."""
+
     responses = {}
     names = [
         'getcapabilities' ,
@@ -41,8 +47,11 @@ def read_responses():
 RESPONSES = read_responses()
 
 class MockFISBroker(BaseHTTPRequestHandler):
+    """A mock FIS-Broker for testing."""
 
     def do_GET(self):
+        """Implementation of BaseHTTPRequestHandler.do_GET()."""
+
         parsed_url = urlparse(self.path)
         if parsed_url.path == CSW_PATH:
             query = parse_qs(parsed_url.query)
@@ -96,6 +105,8 @@ class MockFISBroker(BaseHTTPRequestHandler):
         return
 
 def start_mock_server(port=PORT):
+    """Start the mock FIS-Broker with some configuration."""
+
     mock_server = HTTPServer(('localhost', port), MockFISBroker)
 
     print('Serving mock FIS-Broker at port', port)
