@@ -109,7 +109,7 @@ class FisbrokerTestBase(helpers.FunctionalTestBase):
 
         return job
 
-    def _create_source_and_job(self, source_fixture):
+    def _create_source_and_job(self, source_fixture=FISBROKER_HARVESTER_CONFIG):
 
         source = self._create_source(source_fixture)
         job = self._create_job(source.id)
