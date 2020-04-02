@@ -10,6 +10,7 @@ import re
 from urlparse import urlparse, parse_qs
 from threading import Thread
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
+from lxml import etree
 
 import requests
 
@@ -30,11 +31,15 @@ def read_responses():
         'getcapabilities' ,
         'missing_id' ,
         'no_record_found' ,
+        'csw_getrecords_01' ,
         VALID_GUID ,
-        INVALID_GUID
+        INVALID_GUID ,
+        "8a7ea996-7955-4fbb-8980-7be09be6f193_01" ,
+        "aac23975-94e4-3707-96fa-e447e43d6013_01" ,
+        "f2a8a483-74b9-3c7d-9b40-113c60a55c9e_01" ,
     ]
     responses['records'] = {}
-    record_pattern = re.compile(r'^([a-z0-9]){8}-([a-z0-9]){4}-([a-z0-9]){4}-([a-z0-9]){4}-([a-z0-9]){12}$')
+    record_pattern = re.compile(r'^([a-z0-9]){8}-([a-z0-9]){4}-([a-z0-9]){4}-([a-z0-9]){4}-([a-z0-9]){12}(\_[0-9][0-9])?$')
     folder_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'xml')
     for name in names:
         response_file = open(os.path.join(folder_path, "{}.xml".format(name)),"r")
@@ -45,12 +50,13 @@ def read_responses():
     return responses
 
 RESPONSES = read_responses()
+LOG.debug("responses: %s", RESPONSES['records'].keys())
 
 class MockFISBroker(BaseHTTPRequestHandler):
     """A mock FIS-Broker for testing."""
 
     def do_GET(self):
-        """Implementation of BaseHTTPRequestHandler.do_GET()."""
+        """Implementation of do_GET()."""
 
         parsed_url = urlparse(self.path)
         if parsed_url.path == CSW_PATH:
@@ -69,8 +75,14 @@ class MockFISBroker(BaseHTTPRequestHandler):
                     response_content = response_content.replace("{BASE_URL}", base_url)
                 elif csw_request == "getrecordbyid":
                     record_id = query.get('id')
+                    LOG.debug("this is a GetRecordById request: %s",
+                              MockFISBroker.count_get_records)
                     if record_id:
                         record_id = record_id[0]
+                        if record_id not in RESPONSES['records']:
+                            record_id = "{}_{}".format(
+                                record_id, str(MockFISBroker.count_get_records).rjust(2, '0'))
+                        LOG.debug("looking for {}".format(record_id))
                         record = RESPONSES['records'].get(record_id)
                         if record:
                             response_code = requests.codes.ok
@@ -102,12 +114,37 @@ class MockFISBroker(BaseHTTPRequestHandler):
         self.send_header('Content-Type', content_type)
         self.end_headers()
         self.wfile.write(response_content)
-        return
+
+    def do_POST(self):
+        """Implementation of do_POST()."""
+
+        length = int(self.headers.getheader('content-length', 0))
+        body = self.rfile.read(length)
+        root = etree.fromstring(body)
+        csw_request = root.tag
+        content_type = "application/xml"
+        response_content = "<foo></foo>"
+        if csw_request == "{http://www.opengis.net/cat/csw/2.0.2}GetRecords":
+            MockFISBroker.count_get_records += 1
+            LOG.debug("this is a GetRecords request: %s", MockFISBroker.count_get_records)
+            response_content = RESPONSES['csw_getrecords_01']
+            response_code = 200
+        else:
+            response_code = requests.codes.bad_request
+            content_type = 'text/plain; charset=utf-8'
+            response_content = "unknown request '{}'.".format(csw_request)
+
+        self.send_response(response_code)
+        self.send_header('Content-Type', content_type)
+        self.end_headers()
+        self.wfile.write(response_content)
+
 
 def start_mock_server(port=PORT):
     """Start the mock FIS-Broker with some configuration."""
 
     mock_server = HTTPServer(('localhost', port), MockFISBroker)
+    MockFISBroker.count_get_records = 0
 
     print('Serving mock FIS-Broker at port', port)
 
