@@ -9,4 +9,5 @@ nosetests --ckan \
           --with-pylons=subdir/test.ini \
           --with-coverage \
           --cover-package=ckanext.fisbroker \
-          --cover-erase
+          --cover-erase \
+          --detailed-errors
