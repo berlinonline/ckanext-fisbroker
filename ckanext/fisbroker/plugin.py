@@ -562,9 +562,11 @@ class FisbrokerPlugin(CSWHarvester):
 
     @classmethod
     def last_error_free_job(cls, harvest_job):
-        '''Override last_error_free_job() from 
+        '''Override last_error_free_job() from
            ckanext.harvest.harvesters.base.HarvesterBase to filter out
            jobs that were created by a reimport action.'''
+
+        LOG.debug("last_error_free_job() override")
 
         jobs = \
             model.Session.query(HarvestJob) \
@@ -581,7 +583,10 @@ class FisbrokerPlugin(CSWHarvester):
         # (looping rather than doing sql, in case there are lots of objects
         # and lots of jobs)
         for job in jobs:
+            LOG.debug("job: %s", job)
             for obj in job.objects:
+                LOG.debug("obj.current: %s", obj.current)
+                LOG.debug("obj.report_status: %s", obj.report_status)
                 if obj.current is False and \
                         obj.report_status != 'not modified':
                     # unsuccessful, so go onto the next job
