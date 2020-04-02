@@ -7,8 +7,12 @@ from nose.tools import assert_raises
 
 from ckan.logic import get_action
 
+from ckanext.harvest.queue import (
+    gather_stage ,
+    fetch_and_import_stages ,
+)
 from ckanext.harvest.model import (
-    HarvestObject,
+    HarvestObject ,
 )
 
 from ckanext.spatial.harvesters.base import SpatialHarvester
@@ -554,3 +558,22 @@ class TestPlugin(FisbrokerTestBase):
         timedelta = FisbrokerPlugin().get_timedelta()
         _assert_equal(timedelta, 1)
 
+    def test_last_error_free_returns_correct_job(self):
+        '''Test that, after a successful job A, last_error_free() returns A.'''
+
+        source, job = self._create_source_and_job()
+        LOG.debug("first run:")
+        LOG.debug("job before gather: %s", job)
+        object_ids = gather_stage(FisbrokerPlugin(), job)
+        LOG.debug("job after gather: %s", job)
+        for object_id in object_ids:
+            harvest_object = HarvestObject.get(object_id)
+            fetch_and_import_stages(FisbrokerPlugin(), harvest_object)
+            LOG.debug("harvest_object after fetch_and_import_stages: %s", harvest_object)
+        job.status = u'Finished'
+        job.save()
+
+
+        new_job = self._create_job(source.id)
+        last_error_free_job = FisbrokerPlugin().last_error_free_job(new_job)
+        _assert_equal(last_error_free_job, job)
