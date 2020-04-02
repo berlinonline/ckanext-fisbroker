@@ -7,10 +7,16 @@ import os
 import re
 
 from owslib.fes import PropertyIsGreaterThanOrEqualTo
+from sqlalchemy import exists
 
+from ckan import model
 from ckan.lib.munge import munge_title_to_name
 import ckan.plugins as plugins
 import ckan.plugins.toolkit as toolkit
+from ckanext.harvest.model import (
+    HarvestJob ,
+    HarvestGatherError ,
+)
 from ckanext.spatial.interfaces import ISpatialHarvester
 from ckanext.spatial.harvesters.csw import CSWHarvester
 from ckanext.spatial.validation.validation import BaseValidator
@@ -402,7 +408,6 @@ class FisbrokerPlugin(CSWHarvester):
         https://github.com/ckan/ckanext-spatial/blob/master/ckanext/spatial/interfaces.py
         '''
         LOG.debug("--------- get_package_dict ----------")
-        LOG.debug("context: %s", context)
 
         if hasattr(data_dict, '__getitem__'):
 
@@ -555,6 +560,34 @@ class FisbrokerPlugin(CSWHarvester):
             LOG.debug('calling get_package_dict on CSWHarvester')
             return CSWHarvester.get_package_dict(self, context, data_dict)
 
+    @classmethod
+    def last_error_free_job(cls, harvest_job):
+        '''Override last_error_free_job() from 
+           ckanext.harvest.harvesters.base.HarvesterBase to filter out
+           jobs that were created by a reimport action.'''
+
+        jobs = \
+            model.Session.query(HarvestJob) \
+                 .filter(HarvestJob.source == harvest_job.source) \
+                 .filter(HarvestJob.gather_started != None) \
+                 .filter(HarvestJob.status == 'Finished') \
+                 .filter(HarvestJob.id != harvest_job.id) \
+                 .filter(
+                     ~exists().where(
+                         HarvestGatherError.harvest_job_id == HarvestJob.id)) \
+                 .order_by(HarvestJob.gather_started.desc())
+
+        # now check them until we find one with no fetch/import errors
+        # (looping rather than doing sql, in case there are lots of objects
+        # and lots of jobs)
+        for job in jobs:
+            for obj in job.objects:
+                if obj.current is False and \
+                        obj.report_status != 'not modified':
+                    # unsuccessful, so go onto the next job
+                    break
+            else:
+                return job
 
 class AlwaysValid(BaseValidator):
     '''A validator that always validates. Needed because FIS-Broker-XML
