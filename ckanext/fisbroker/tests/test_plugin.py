@@ -562,14 +562,10 @@ class TestPlugin(FisbrokerTestBase):
         '''Test that, after a successful job A, last_error_free() returns A.'''
 
         source, job = self._create_source_and_job()
-        LOG.debug("first run:")
-        LOG.debug("job before gather: %s", job)
         object_ids = gather_stage(FisbrokerPlugin(), job)
-        LOG.debug("job after gather: %s", job)
         for object_id in object_ids:
             harvest_object = HarvestObject.get(object_id)
             fetch_and_import_stages(FisbrokerPlugin(), harvest_object)
-            LOG.debug("harvest_object after fetch_and_import_stages: %s", harvest_object)
         job.status = u'Finished'
         job.save()
 
