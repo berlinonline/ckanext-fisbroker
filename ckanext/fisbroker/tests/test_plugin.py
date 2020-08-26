@@ -558,7 +558,7 @@ class TestPlugin(FisbrokerTestBase):
         timedelta = FisbrokerPlugin().get_timedelta()
         _assert_equal(timedelta, 1)
 
-    def test_last_error_free_returns_correct_job(self):
+    def test_last_error_free_returns_correct_job_a(self):
         '''Test that, after a successful job A, last_error_free() returns A.'''
 
         source, job = self._create_source_and_job()
@@ -569,7 +569,33 @@ class TestPlugin(FisbrokerTestBase):
         job.status = u'Finished'
         job.save()
 
-
         new_job = self._create_job(source.id)
         last_error_free_job = FisbrokerPlugin().last_error_free_job(new_job)
         _assert_equal(last_error_free_job, job)
+
+    def test_last_error_free_returns_correct_job_b(self):
+        '''Test that, after a successful job A, followed by an unsuccessful
+           job B, last_error_free() returns A.'''
+
+        source, job_a = self._create_source_and_job()
+        object_ids = gather_stage(FisbrokerPlugin(), job_a)
+        for object_id in object_ids:
+            harvest_object = HarvestObject.get(object_id)
+            fetch_and_import_stages(FisbrokerPlugin(), harvest_object)
+        job_a.status = u'Finished'
+        job_a.save()
+
+        # This harvest job should fail, because the mock FIS-broker will look for a different
+        # file on the second harvest run, will not find it and return a "no_record_found"
+        # error.
+        job_b = self._create_job(source.id)
+        object_ids = gather_stage(FisbrokerPlugin(), job_b)
+        for object_id in object_ids:
+            harvest_object = HarvestObject.get(object_id)
+            fetch_and_import_stages(FisbrokerPlugin(), harvest_object)
+        job_b.status = u'Finished'
+        job_b.save()
+
+        new_job = self._create_job(source.id)
+        last_error_free_job = FisbrokerPlugin().last_error_free_job(new_job)
+        _assert_equal(last_error_free_job, job_a)
