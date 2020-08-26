@@ -25,7 +25,7 @@ from ckanext.harvest.tests import factories as harvest_factories
 
 from ckanext.fisbroker import HARVESTER_ID
 from ckanext.fisbroker.plugin import FisbrokerPlugin
-from ckanext.fisbroker.tests.mock_fis_broker import start_mock_server, VALID_GUID, METADATA_OLD
+from ckanext.fisbroker.tests.mock_fis_broker import start_mock_server, reset_mock_server, VALID_GUID, METADATA_OLD
 from ckanext.fisbroker.tests.xml_file_server import serve
 
 LOG = logging.getLogger(__name__)
@@ -65,6 +65,7 @@ class FisbrokerTestBase(helpers.FunctionalTestBase):
 
     def setup(self):
         super(FisbrokerTestBase, self).setup()
+        reset_mock_server()
         # Add sysadmin user
         user_name = u'harvest'
         harvest_user = model.User(name=user_name, password=u'test', sysadmin=True)
