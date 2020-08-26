@@ -74,6 +74,11 @@ class MockFISBroker(BaseHTTPRequestHandler):
                     base_url = "http://{}:{}{}".format(self.server.server_name, self.server.server_port, CSW_PATH)
                     response_content = response_content.replace("{BASE_URL}", base_url)
                 elif csw_request == "getrecordbyid":
+                    # for id X and getrecords count Y, the mock FIS-Broker will
+                    # look for an entry "X_Y" in the RESPONSES dict. If the entry
+                    # exists, it will be served. If it doesn't exist, the 'no_record_found'
+                    # response will be served, leading to an error in the harvest job.
+                    # This can be used for tests that somehow involve errored harvest jobs.
                     record_id = query.get('id')
                     LOG.debug("this is a GetRecordById request: %s",
                               MockFISBroker.count_get_records)
