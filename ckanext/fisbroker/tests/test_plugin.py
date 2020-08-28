@@ -1,9 +1,12 @@
 # coding: utf-8
 """Tests for plugin.py."""
 
+from datetime import timedelta
 import logging
 import os
 from nose.tools import assert_raises
+
+from owslib.fes import PropertyIsGreaterThanOrEqualTo
 
 from ckan.logic import get_action
 
@@ -558,7 +561,7 @@ class TestPlugin(FisbrokerTestBase):
         timedelta = FisbrokerPlugin().get_timedelta()
         _assert_equal(timedelta, 1)
 
-    def test_last_error_free_returns_correct_job_a(self):
+    def test_last_error_free_returns_correct_job(self):
         '''Test that, after a successful job A, last_error_free() returns A.'''
 
         source, job = self._create_source_and_job()
@@ -573,7 +576,21 @@ class TestPlugin(FisbrokerTestBase):
         last_error_free_job = FisbrokerPlugin().last_error_free_job(new_job)
         _assert_equal(last_error_free_job, job)
 
-    def test_last_error_free_returns_correct_job_b(self):
+        # the import_since date should be the time job_a finished:
+        FisbrokerPlugin().source_config['import_since'] = "last_error_free"
+        import_since = FisbrokerPlugin().get_import_since_date(new_job)
+        import_since_expected = (job_a.gather_started +
+                                 timedelta(hours=FisbrokerPlugin().get_timedelta()))
+        _assert_equal(import_since, import_since_expected.strftime("%Y-%m-%dT%H:%M:%S%z"))
+
+        # the query constraints should reflect the import_since date:
+        constraint = FisbrokerPlugin().get_constraints(new_job)[0]
+        _assert_equal(constraint.literal, PropertyIsGreaterThanOrEqualTo(
+            'modified', import_since).literal)
+        _assert_equal(constraint.propertyname, PropertyIsGreaterThanOrEqualTo(
+            'modified', import_since).propertyname)
+
+    def test_last_error_free_does_not_return_unsuccessful_job(self):
         '''Test that, after a successful job A, followed by an unsuccessful
            job B, last_error_free() returns A.'''
 
@@ -598,4 +615,18 @@ class TestPlugin(FisbrokerTestBase):
 
         new_job = self._create_job(source.id)
         last_error_free_job = FisbrokerPlugin().last_error_free_job(new_job)
+        # job_a should be the last error free job:
         _assert_equal(last_error_free_job, job_a)
+
+        # the import_since date should be the time job_a finished:
+        FisbrokerPlugin().source_config['import_since'] = "last_error_free"
+        import_since = FisbrokerPlugin().get_import_since_date(new_job)
+        import_since_expected = (job_a.gather_started +
+                                 timedelta(hours=FisbrokerPlugin().get_timedelta()))
+        _assert_equal(import_since, import_since_expected.strftime("%Y-%m-%dT%H:%M:%S%z"))
+
+        # the query constraints should reflect the import_since date:
+        constraint = FisbrokerPlugin().get_constraints(new_job)[0]
+        _assert_equal(constraint.literal, PropertyIsGreaterThanOrEqualTo('modified', import_since).literal)
+        _assert_equal(constraint.propertyname, PropertyIsGreaterThanOrEqualTo(
+            'modified', import_since).propertyname)
