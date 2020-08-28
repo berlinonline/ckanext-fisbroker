@@ -248,7 +248,7 @@ class FisbrokerPlugin(CSWHarvester):
 
     def get_import_since_date(self, harvest_job):
         '''Get the `import_since` config as a string (property of
-           the query constraint). Handle special values such as 
+           the query constraint). Handle special values such as
            `last_error_free` and `big bang`.'''
 
         if not 'import_since' in self.source_config:
@@ -281,7 +281,7 @@ class FisbrokerPlugin(CSWHarvester):
             return []
 
     def get_timeout(self):
-        '''Get the `timeout` config as a string (timeout threshold for requests 
+        '''Get the `timeout` config as a string (timeout threshold for requests
            to FIS-Broker).'''
         if 'timeout' in self.source_config:
             return int(self.source_config['timeout'])
