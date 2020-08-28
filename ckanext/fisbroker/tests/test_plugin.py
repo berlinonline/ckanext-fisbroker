@@ -378,7 +378,7 @@ class TestTransformationHelpers(FisbrokerTestBase):
         _assert_equal(preview_markup, None)
 
     def test_complex_extras_become_json(self):
-        '''Test that converting extra-dicts to list of dicts works, 
+        '''Test that converting extra-dicts to list of dicts works,
            including the conversion of complex values to JSON strings.'''
 
         extras_dict = {
@@ -400,8 +400,11 @@ class TestTransformationHelpers(FisbrokerTestBase):
         _assert_equal(extras_as_list(extras_dict), extras_list)
 
 class TestPlugin(FisbrokerTestBase):
+    '''Tests for the main plugin class.'''
 
     def test_open_data_wfs_service(self):
+        '''Do the whole process: import and convert a document from the CSW-server, test
+           if all the values in the converted dict are as expected.'''
         # Create source1
         wfs_fixture = {
             'title': 'Test Source',
