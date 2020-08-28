@@ -582,7 +582,7 @@ class TestPlugin(FisbrokerTestBase):
         # the import_since date should be the time job_a finished:
         FisbrokerPlugin().source_config['import_since'] = "last_error_free"
         import_since = FisbrokerPlugin().get_import_since_date(new_job)
-        import_since_expected = (job_a.gather_started +
+        import_since_expected = (job.gather_started +
                                  timedelta(hours=FisbrokerPlugin().get_timedelta()))
         _assert_equal(import_since, import_since_expected.strftime("%Y-%m-%dT%H:%M:%S%z"))
 
@@ -633,3 +633,13 @@ class TestPlugin(FisbrokerTestBase):
         _assert_equal(constraint.literal, PropertyIsGreaterThanOrEqualTo('modified', import_since).literal)
         _assert_equal(constraint.propertyname, PropertyIsGreaterThanOrEqualTo(
             'modified', import_since).propertyname)
+
+    def test_import_since_date_is_none_if_no_jobs(self):
+        '''Test that, if the `import_since` setting is `last_error_free`, but
+        no jobs have run successfully (or at all), get_import_since_date()
+        returns None.'''
+
+        source, job = self._create_source_and_job()
+        FisbrokerPlugin().source_config['import_since'] = "last_error_free"
+        import_since = FisbrokerPlugin().get_import_since_date(job)
+        _assert_equal(import_since, None)
