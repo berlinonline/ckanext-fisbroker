@@ -5,8 +5,9 @@ sudo cp ckan/ckan/config/solr/schema.xml /etc/solr/conf/schema.xml
 sudo service jetty restart
 
 nosetests --ckan \
-          --nologcapture \
+          --nocapture \
           --with-pylons=subdir/test.ini \
           --with-coverage \
           --cover-package=ckanext.fisbroker \
-          --cover-erase
+          --cover-erase \
+          --detailed-errors

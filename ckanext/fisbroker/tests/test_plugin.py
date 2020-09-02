@@ -1,14 +1,21 @@
 # coding: utf-8
 """Tests for plugin.py."""
 
+from datetime import timedelta
 import logging
 import os
 from nose.tools import assert_raises
 
+from owslib.fes import PropertyIsGreaterThanOrEqualTo
+
 from ckan.logic import get_action
 
+from ckanext.harvest.queue import (
+    gather_stage ,
+    fetch_and_import_stages ,
+)
 from ckanext.harvest.model import (
-    HarvestObject,
+    HarvestObject ,
 )
 
 from ckanext.spatial.harvesters.base import SpatialHarvester
@@ -371,7 +378,7 @@ class TestTransformationHelpers(FisbrokerTestBase):
         _assert_equal(preview_markup, None)
 
     def test_complex_extras_become_json(self):
-        '''Test that converting extra-dicts to list of dicts works, 
+        '''Test that converting extra-dicts to list of dicts works,
            including the conversion of complex values to JSON strings.'''
 
         extras_dict = {
@@ -393,8 +400,11 @@ class TestTransformationHelpers(FisbrokerTestBase):
         _assert_equal(extras_as_list(extras_dict), extras_list)
 
 class TestPlugin(FisbrokerTestBase):
+    '''Tests for the main plugin class.'''
 
     def test_open_data_wfs_service(self):
+        '''Do the whole process: import and convert a document from the CSW-server, test
+           if all the values in the converted dict are as expected.'''
         # Create source1
         wfs_fixture = {
             'title': 'Test Source',
@@ -554,3 +564,82 @@ class TestPlugin(FisbrokerTestBase):
         timedelta = FisbrokerPlugin().get_timedelta()
         _assert_equal(timedelta, 1)
 
+    def test_last_error_free_returns_correct_job(self):
+        '''Test that, after a successful job A, last_error_free() returns A.'''
+
+        source, job = self._create_source_and_job()
+        object_ids = gather_stage(FisbrokerPlugin(), job)
+        for object_id in object_ids:
+            harvest_object = HarvestObject.get(object_id)
+            fetch_and_import_stages(FisbrokerPlugin(), harvest_object)
+        job.status = u'Finished'
+        job.save()
+
+        new_job = self._create_job(source.id)
+        last_error_free_job = FisbrokerPlugin().last_error_free_job(new_job)
+        _assert_equal(last_error_free_job, job)
+
+        # the import_since date should be the time job_a finished:
+        FisbrokerPlugin().source_config['import_since'] = "last_error_free"
+        import_since = FisbrokerPlugin().get_import_since_date(new_job)
+        import_since_expected = (job.gather_started +
+                                 timedelta(hours=FisbrokerPlugin().get_timedelta()))
+        _assert_equal(import_since, import_since_expected.strftime("%Y-%m-%dT%H:%M:%S%z"))
+
+        # the query constraints should reflect the import_since date:
+        constraint = FisbrokerPlugin().get_constraints(new_job)[0]
+        _assert_equal(constraint.literal, PropertyIsGreaterThanOrEqualTo(
+            'modified', import_since).literal)
+        _assert_equal(constraint.propertyname, PropertyIsGreaterThanOrEqualTo(
+            'modified', import_since).propertyname)
+
+    def test_last_error_free_does_not_return_unsuccessful_job(self):
+        '''Test that, after a successful job A, followed by an unsuccessful
+           job B, last_error_free() returns A.'''
+
+        source, job_a = self._create_source_and_job()
+        object_ids = gather_stage(FisbrokerPlugin(), job_a)
+        for object_id in object_ids:
+            harvest_object = HarvestObject.get(object_id)
+            fetch_and_import_stages(FisbrokerPlugin(), harvest_object)
+        job_a.status = u'Finished'
+        job_a.save()
+
+        # This harvest job should fail, because the mock FIS-broker will look for a different
+        # file on the second harvest run, will not find it and return a "no_record_found"
+        # error.
+        job_b = self._create_job(source.id)
+        object_ids = gather_stage(FisbrokerPlugin(), job_b)
+        for object_id in object_ids:
+            harvest_object = HarvestObject.get(object_id)
+            fetch_and_import_stages(FisbrokerPlugin(), harvest_object)
+        job_b.status = u'Finished'
+        job_b.save()
+
+        new_job = self._create_job(source.id)
+        last_error_free_job = FisbrokerPlugin().last_error_free_job(new_job)
+        # job_a should be the last error free job:
+        _assert_equal(last_error_free_job, job_a)
+
+        # the import_since date should be the time job_a finished:
+        FisbrokerPlugin().source_config['import_since'] = "last_error_free"
+        import_since = FisbrokerPlugin().get_import_since_date(new_job)
+        import_since_expected = (job_a.gather_started +
+                                 timedelta(hours=FisbrokerPlugin().get_timedelta()))
+        _assert_equal(import_since, import_since_expected.strftime("%Y-%m-%dT%H:%M:%S%z"))
+
+        # the query constraints should reflect the import_since date:
+        constraint = FisbrokerPlugin().get_constraints(new_job)[0]
+        _assert_equal(constraint.literal, PropertyIsGreaterThanOrEqualTo('modified', import_since).literal)
+        _assert_equal(constraint.propertyname, PropertyIsGreaterThanOrEqualTo(
+            'modified', import_since).propertyname)
+
+    def test_import_since_date_is_none_if_no_jobs(self):
+        '''Test that, if the `import_since` setting is `last_error_free`, but
+        no jobs have run successfully (or at all), get_import_since_date()
+        returns None.'''
+
+        source, job = self._create_source_and_job()
+        FisbrokerPlugin().source_config['import_since'] = "last_error_free"
+        import_since = FisbrokerPlugin().get_import_since_date(job)
+        _assert_equal(import_since, None)
