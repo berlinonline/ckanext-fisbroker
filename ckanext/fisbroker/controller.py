@@ -3,6 +3,7 @@
 This module implements the main controller for ckanext-fisbroker.
 """
 
+import datetime
 import logging
 
 # from ckan.common import OrderedDict, _, c, request, response, config
@@ -162,6 +163,7 @@ class FISBrokerController(base.BaseController):
 
                             job_dict = toolkit.get_action('harvest_job_create')(context,{'source_id':harvester.id})
                             harvest_job = HarvestJob.get(job_dict['id'])
+                            harvest_job.gather_started = datetime.datetime.utcnow()
                             assert harvest_job
 
                             obj = HarvestObject(guid=fb_id,
@@ -190,6 +192,7 @@ class FISBrokerController(base.BaseController):
                             Session.refresh(obj)
 
                             harvest_job.status = u'Finished'
+                            harvest_job.finished = datetime.datetime.utcnow()
                             harvest_job.save()
 
                         else:
