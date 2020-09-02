@@ -230,8 +230,9 @@ class TestReimport(FisbrokerTestBase):
             )
 
     def test_reimport_invalid_dataset_triggers_deletion(self):
-        """If a previously harvested dataset is reimported, it should trigger
-           its deletion (change state to deleted)."""
+        """If a previously harvested dataset is reimported, and the 
+           reimport results in an ERROR_DURING_IMPORT, the package should
+           have its state changed to deleted."""
 
         fb_dataset_dict, source, job = self._harvester_setup(
             FISBROKER_HARVESTER_CONFIG, fb_guid=INVALID_GUID)
