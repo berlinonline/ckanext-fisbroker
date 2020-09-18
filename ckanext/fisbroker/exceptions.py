@@ -18,7 +18,6 @@ ERROR_NOT_FOUND_IN_FISBROKER = 10
 ERROR_DURING_IMPORT = 11
 ERROR_UNEXPECTED = 20
 
-
 ERROR_MESSAGES = {
     ERROR_WRONG_HTTP: "Wrong HTTP method, only GET is allowed.",
     ERROR_WRONG_CONTENT_TYPE: "Wrong content type, only application/json is allowed.",
