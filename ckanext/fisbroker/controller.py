@@ -24,6 +24,26 @@ from ckanext.harvest.model import (
 )
 
 from ckanext.fisbroker import HARVESTER_ID
+from ckanext.fisbroker.exceptions import (
+    ERROR_MESSAGES,
+    ERROR_DURING_IMPORT,
+    ERROR_MISSING_ID,
+    ERROR_NO_CONNECTION,
+    ERROR_NO_GUID,
+    ERROR_NOT_FOUND_IN_CKAN,
+    ERROR_NOT_FOUND_IN_FISBROKER,
+    ERROR_NOT_HARVESTED,
+    ERROR_NOT_HARVESTED_BY_FISBROKER,
+    ERROR_UNEXPECTED,
+    ERROR_WRONG_CONTENT_TYPE,
+    ERROR_WRONG_HTTP,
+    NoFBHarvesterDefined,
+    PackageIdDoesNotExistError,
+    PackageNotHarvestedError,
+    PackageNotHarvestedInFisbrokerError,
+    NoFisbrokerIdError,
+    NoConnectionError,
+)
 from ckanext.fisbroker.helper import (
     dataset_was_harvested,
     harvester_for_package,
@@ -32,32 +52,6 @@ from ckanext.fisbroker.helper import (
 from ckanext.fisbroker.plugin import FisbrokerPlugin
 
 LOG = logging.getLogger(__name__)
-ERROR_WRONG_HTTP = 1
-ERROR_WRONG_CONTENT_TYPE = 2
-ERROR_MISSING_ID = 3
-ERROR_NOT_FOUND_IN_CKAN = 4
-ERROR_NOT_HARVESTED = 5
-ERROR_NOT_HARVESTED_BY_FISBROKER = 6
-ERROR_NO_GUID = 7
-ERROR_NO_CONNECTION = 8
-ERROR_NOT_FOUND_IN_FISBROKER = 9
-ERROR_DURING_IMPORT = 10
-ERROR_UNEXPECTED = 20
-
-
-ERROR_MESSAGES = {
-    ERROR_WRONG_HTTP: 'Wrong HTTP method, only GET is allowed.',
-    ERROR_WRONG_CONTENT_TYPE: 'Wrong content type, only application/json is allowed.',
-    ERROR_MISSING_ID: "Missing parameter 'id'.",
-    ERROR_NOT_FOUND_IN_CKAN: 'No such package found.',
-    ERROR_NOT_HARVESTED: 'Package could not be re-imported because it was not created by a harvester.',
-    ERROR_NOT_HARVESTED_BY_FISBROKER: "Package could not be re-imported because it was not harvested by harvester '{}'.".format(HARVESTER_ID),
-    ERROR_NO_GUID: "Package could not be re-imported because FIS-Broker GUID could not be determined.",
-    ERROR_NO_CONNECTION: "Failed to establish connection to FIS-Broker service at {} ({}).",
-    ERROR_NOT_FOUND_IN_FISBROKER: "Package could not be re-imported because GUID '{}' was not found on FIS-Broker.",
-    ERROR_DURING_IMPORT: "Package could not be re-imported because the FIS-Broker data is no longer valid. Reason: {}. Package will be deactivated.",
-    ERROR_UNEXPECTED: 'Unexpected error'
-}
 
 def get_error_dict(error_code):
     '''Return a dict for an error_code, raise ValueError if code doesn't exist.'''
