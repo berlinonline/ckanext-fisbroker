@@ -26,6 +26,14 @@ from ckanext.harvest.tests import factories
 from ckanext.fisbroker import HARVESTER_ID
 import ckanext.fisbroker.controller as controller
 from ckanext.fisbroker.controller import get_error_dict, ERROR_MESSAGES, ERROR_DURING_IMPORT
+from ckanext.fisbroker.exceptions import (
+    NoFBHarvesterDefined,
+    PackageIdDoesNotExistError,
+    PackageNotHarvestedError,
+    PackageNotHarvestedInFisbrokerError,
+    NoFisbrokerIdError,
+    NoConnectionError,
+)
 from ckanext.fisbroker.tests import _assert_equal, _assert_not_equal, FisbrokerTestBase, FISBROKER_HARVESTER_CONFIG
 from ckanext.fisbroker.tests.mock_fis_broker import VALID_GUID, INVALID_GUID
 
@@ -230,7 +238,7 @@ class TestReimport(FisbrokerTestBase):
             )
 
     def test_reimport_invalid_dataset_triggers_deletion(self):
-        """If a previously harvested dataset is reimported, and the 
+        """If a previously harvested dataset is reimported, and the
            reimport results in an ERROR_DURING_IMPORT, the package should
            have its state changed to deleted."""
 
@@ -256,6 +264,99 @@ class TestReimport(FisbrokerTestBase):
         _assert_equal(content['error']['code'], ERROR_DURING_IMPORT)
         package = Package.get(package_id)
         _assert_equal(package.state, 'deleted')
+
+    def test_reimport_batch_raise_error_if_no_fb_havester_defined(self):
+        '''Calling reimport_batch when there is not FIS-Broker harvester
+           defined should result in an error.'''
+
+        fb_controller = controller.FISBrokerController()
+
+        package_ids = []
+        with assert_raises(NoFBHarvesterDefined):
+            fb_controller.reimport_batch(package_ids, self.context)
+
+    def test_reimport_batch_raise_error_for_nonexisting_package(self):
+        '''A batch reimport containing a package_id which doesn't exist should
+           trigger a PackageIdDoesNotExistError.'''
+
+        # FIS-Broker harvester needs to exist, or reimport won't work
+        self._create_source()
+
+        fb_controller = controller.FISBrokerController()
+
+        package_ids = ['dunk']
+        with assert_raises(PackageIdDoesNotExistError):
+            fb_controller.reimport_batch(package_ids, self.context)
+
+    def test_reimport_batch_raise_error_for_nonharvested_package(self):
+        '''A batch reimport containing a package which wasn't harvested should
+           trigger a PackageNotHarvestedError.'''
+
+        # FIS-Broker harvester needs to exist, or reimport won't work
+        self._create_source()
+
+        fb_controller = controller.FISBrokerController()
+        non_fb_dataset_dict = ckan_factories.Dataset()
+        package_id = non_fb_dataset_dict['id']
+
+        package_ids = [package_id]
+        with assert_raises(PackageNotHarvestedError):
+            fb_controller.reimport_batch(package_ids, self.context)
+
+    def test_reimport_batch_raise_error_for_package_not_harvested_by_fbharvester(self):
+        '''A batch reimport containing a package which wasn't harvested by ckanext-fisbroker
+           should trigger a PackageNotHarvestedInFisbrokerError.'''
+
+        # FIS-Broker harvester needs to exist, or reimport won't work
+        self._create_source()
+
+        fb_controller = controller.FISBrokerController()
+        harvester_config = {
+            'title': 'Dummy Harvester',
+            'name': 'dummy-harvester',
+            'source_type': 'dummyharvest',
+            'url': "http://test.org/csw"
+        }
+        dataset_dict, source, job = self._harvester_setup(harvester_config)
+        package_id = dataset_dict['id']
+
+        package_ids = [package_id]
+        with assert_raises(PackageNotHarvestedInFisbrokerError):
+            fb_controller.reimport_batch(package_ids, self.context)
+
+    def test_reimport_batch_raise_error_for_package_without_fb_guid(self):
+        '''A batch reimport containing a package which doesn't have a FIS-Broker guid
+           should trigger a NoFisbrokerIdError.'''
+
+        fb_controller = controller.FISBrokerController()
+        fb_dataset_dict, source, job = self._harvester_setup(
+            FISBROKER_HARVESTER_CONFIG, fb_guid=None)
+        # datasets created in this way have no extras set, so also no 'guid'
+        package_id = fb_dataset_dict['id']
+
+        package_ids = [package_id]
+        with assert_raises(NoFisbrokerIdError):
+            fb_controller.reimport_batch(package_ids, self.context)
+
+    def test_reimport_batch_raises_no_connection_error(self):
+        '''A batch reimport show trigger a NoConnectionError if a connection to
+           FIS-Broker cannot be established.'''
+
+        fb_controller = controller.FISBrokerController()
+        unreachable_config = {
+            'title': 'Unreachable FIS-Broker Harvest Source',
+            'name': 'unreachable-fis-broker-harvest-source',
+            'source_type': HARVESTER_ID,
+            'url': "http://somewhere.over.the.ra.invalid/csw"
+        }
+        fb_dataset_dict, source, job = self._harvester_setup(unreachable_config)
+        package_update(self.context, fb_dataset_dict)
+        package_id = fb_dataset_dict['id']
+
+        package_ids = [package_id]
+        with assert_raises(NoConnectionError):
+            fb_controller.reimport_batch(package_ids, self.context)
+
 
 class DummyHarvester(SingletonPlugin):
     '''A dummy harvester for testing purposes.'''

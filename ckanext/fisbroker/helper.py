@@ -2,8 +2,11 @@
 """A collection of helper methods for the CKAN FIS-Broker harvester."""
 
 import logging
-from ckan.model.package import Package
 from urlparse import urlparse, urlunparse, parse_qs
+
+from ckan import model
+from ckan.model.package import Package
+from ckan.plugins import toolkit
 
 from ckanext.fisbroker import HARVESTER_ID
 
@@ -76,3 +79,16 @@ def get_package_object(package_dict):
        `package_dict` or None if there isn't one."""
 
     return Package.get(package_dict.get('name'))
+
+def get_fisbroker_source():
+    """Return the HarvestSource object that is responsible for harvesting the FIS-Broker.
+       Return None if no FIS-Broker source is found."""
+
+    context = {'model': model, 'session': model.Session, 'ignore_auth': True}
+    sources = toolkit.get_action('harvest_source_list')(context, {})
+
+    for source in sources:
+        if source.get('type', None) == HARVESTER_ID:
+            return source
+
+    return None

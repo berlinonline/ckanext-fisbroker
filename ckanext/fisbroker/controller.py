@@ -48,6 +48,7 @@ from ckanext.fisbroker.helper import (
     dataset_was_harvested,
     harvester_for_package,
     fisbroker_guid,
+    get_fisbroker_source
 )
 from ckanext.fisbroker.plugin import FisbrokerPlugin
 
@@ -113,6 +114,70 @@ class FISBrokerController(base.BaseController):
 
         return self.reimport(package_id)
 
+    def reimport_batch(self, package_ids, context):
+        '''Batch-reimport all packages in `package_ids` from their original
+           harvest source.'''
+
+        ckan_fb_mapping = {}
+
+        # first, do checks that can be done without connection to FIS-Broker
+        for package_id in package_ids:
+            package = Package.get(package_id)
+
+            if not package:
+                raise PackageIdDoesNotExistError(package_id)
+
+            if not dataset_was_harvested(package):
+                raise PackageNotHarvestedError(package_id)
+
+            harvester = harvester_for_package(package)
+            harvester_url = harvester.url
+            harvester_type = harvester.type
+            if not harvester_type == HARVESTER_ID:
+                raise PackageNotHarvestedInFisbrokerError(package_id)
+
+            fb_guid = fisbroker_guid(package)
+            if not fb_guid:
+                raise NoFisbrokerIdError(package_id)
+
+            ckan_fb_mapping[package_id] = fb_guid
+
+        # get the harvest source for FIS-Broker datasets
+        fb_source = get_fisbroker_source()
+        if not fb_source:
+            raise NoFBHarvesterDefined()
+        source_id = fb_source.get('id', None)
+        if not source_id:
+            raise NoFBHarvesterDefined('FIS-Broker harvester found, but no id defined.')
+
+        # Create and start a new harvest job
+        job_dict = toolkit.get_action('harvest_job_create')(context, {'source_id': source_id})
+        harvest_job = HarvestJob.get(job_dict['id'])
+        harvest_job.gather_started = datetime.datetime.utcnow()
+        assert harvest_job
+
+        # instatiate the CSW connector (on the reasonable assumption that harvester_url is
+        # the same for all package_ids)
+        package_id = None
+        try:
+            csw = CatalogueServiceWeb(harvester_url)
+            for package_id, fb_guid in ckan_fb_mapping.items():
+                # query connector to get resource document
+                csw.getrecordbyid([fb_guid], outputschema=namespaces['gmd'])
+
+                # show resource document
+                record = csw.records.get(fb_guid, None)
+        except RequestException as error:
+            raise NoConnectionError(package_id, harvester_url, str(error.__class__.__name__))
+
+
+        # successfully finish harvest job
+        harvest_job.status = u'Finished'
+        harvest_job.finished = datetime.datetime.utcnow()
+        harvest_job.save()
+
+        return None
+
     def reimport(self, package_id, direct_call=False):
         '''Reimport package with `package_id` from the original harvest
            source.'''
@@ -125,6 +190,8 @@ class FISBrokerController(base.BaseController):
         if not package:
             response_data['error'] = get_error_dict(ERROR_NOT_FOUND_IN_CKAN)
             response_code = 404
+            message = response_data['error']['message'].format(package_id)
+            response_data['error']['message'] = message
         elif dataset_was_harvested(package):
             harvester = harvester_for_package(package)
             harvester_url = harvester.url
