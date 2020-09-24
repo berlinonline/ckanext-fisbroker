@@ -43,6 +43,8 @@ from ckanext.fisbroker.exceptions import (
     PackageNotHarvestedInFisbrokerError,
     NoFisbrokerIdError,
     NoConnectionError,
+    NotFoundInFisbrokerError,
+    FBImportError,
 )
 from ckanext.fisbroker.helper import (
     dataset_was_harvested,
@@ -147,8 +149,6 @@ class FISBrokerController(base.BaseController):
         if not fb_source:
             raise NoFBHarvesterDefined()
         source_id = fb_source.get('id', None)
-        if not source_id:
-            raise NoFBHarvesterDefined('FIS-Broker harvester found, but no id defined.')
 
         # Create and start a new harvest job
         job_dict = toolkit.get_action('harvest_job_create')(context, {'source_id': source_id})
@@ -159,6 +159,7 @@ class FISBrokerController(base.BaseController):
         # instatiate the CSW connector (on the reasonable assumption that harvester_url is
         # the same for all package_ids)
         package_id = None
+        reimported_packages = []
         try:
             csw = CatalogueServiceWeb(harvester_url)
             for package_id, fb_guid in ckan_fb_mapping.items():
@@ -167,6 +168,31 @@ class FISBrokerController(base.BaseController):
 
                 # show resource document
                 record = csw.records.get(fb_guid, None)
+                if record:
+                    obj = HarvestObject(guid=fb_guid,
+                                        job=harvest_job,
+                                        content=record.xml,
+                                        package_id=package_id,
+                                        extras=[HarvestObjectExtra(key='status',value='change')])
+                    obj.save()
+
+                    assert obj, obj.content
+
+                    harvester = FisbrokerPlugin()
+                    harvester.force_import = True
+                    harvester.import_stage(obj)
+                    rejection_reason = self._dataset_rejected(obj)
+                    if rejection_reason:
+                        raise FBImportError(package_id, rejection_reason)
+
+                    harvester.force_import = False
+                    Session.refresh(obj)
+
+                    reimported_packages.append(record)
+
+                else:
+                    raise NotFoundInFisbrokerError(package_id, fb_guid)
+
         except RequestException as error:
             raise NoConnectionError(package_id, harvester_url, str(error.__class__.__name__))
 
@@ -176,105 +202,57 @@ class FISBrokerController(base.BaseController):
         harvest_job.finished = datetime.datetime.utcnow()
         harvest_job.save()
 
-        return None
+        return reimported_packages
 
-    def reimport(self, package_id, direct_call=False):
+    def reimport(self, package_id, direct_call=False, context=None):
         '''Reimport package with `package_id` from the original harvest
            source.'''
 
-        # initiate connector
-        package = Package.get(package_id)
+        if not context:
+            context = {
+                'model': model,
+                'session': model.Session,
+                'user': c.user
+            }
         response_data = {
             "success": False
         }
-        if not package:
-            response_data['error'] = get_error_dict(ERROR_NOT_FOUND_IN_CKAN)
-            response_code = 404
-            message = response_data['error']['message'].format(package_id)
-            response_data['error']['message'] = message
-        elif dataset_was_harvested(package):
-            harvester = harvester_for_package(package)
-            harvester_url = harvester.url
-            harvester_type = harvester.type
-            if harvester_type == HARVESTER_ID:
-                fb_id = fisbroker_guid(package)
-                if fb_id:
-                    try:
-                        csw = CatalogueServiceWeb(harvester_url)
-                        # query connector to get resource document
-                        csw.getrecordbyid([fb_id], outputschema=namespaces['gmd'])
-
-                        # show resource document
-                        record = csw.records.get(fb_id, None)
-                        LOG.debug("got record: %s", record)
-                        if record:
-                            response_code = 200
-                            response_data = {
-                                "success": True ,
-                                "message": "Package was successfully re-imported."
-                            }
-                            LOG.debug(record.xml)
-
-                            # Create a job
-                            context = {
-                                'model': model,
-                                'session': model.Session,
-                                'user': c.user
-                            }
-
-                            job_dict = toolkit.get_action('harvest_job_create')(context,{'source_id':harvester.id})
-                            harvest_job = HarvestJob.get(job_dict['id'])
-                            harvest_job.gather_started = datetime.datetime.utcnow()
-                            assert harvest_job
-
-                            obj = HarvestObject(guid=fb_id,
-                                                job=harvest_job,
-                                                content=record.xml,
-                                                package_id=package_id,
-                                                extras=[HarvestObjectExtra(key='status',value='change')])
-                            obj.save()
-
-                            assert obj, obj.content
-
-                            harvester = FisbrokerPlugin()
-                            harvester.force_import = True
-                            status = harvester.import_stage(obj)
-                            rejection_reason = self._dataset_rejected(obj)
-                            if rejection_reason:
-                                response_code = 200
-                                response_data = {
-                                    "success": False,
-                                    "error": get_error_dict(ERROR_DURING_IMPORT)
-                                }
-                                message = response_data['error']['message'].format(rejection_reason)
-                                response_data['error']['message'] = message
-
-                            harvester.force_import = False
-                            Session.refresh(obj)
-
-                            harvest_job.status = u'Finished'
-                            harvest_job.finished = datetime.datetime.utcnow()
-                            harvest_job.save()
-
-                        else:
-                            response_code = 404
-                            response_data['error'] = get_error_dict(ERROR_NOT_FOUND_IN_FISBROKER)
-                            message = response_data['error']['message'].format(fb_id)
-                            response_data['error']['message'] = message
-                    except RequestException as error:
-                        response_code = 500
-                        response_data['error'] = get_error_dict(ERROR_NO_CONNECTION)
-                        message = response_data['error']['message'].format(harvester_url, str(error.__class__.__name__))
-                        response_data['error']['message'] = message
-                else:
-                    response_code = 500
-                    response_data['error'] = get_error_dict(ERROR_NO_GUID)
-            else:
-                response_code = 422
-                response_data['error'] = get_error_dict(ERROR_NOT_HARVESTED_BY_FISBROKER)
-        else:
+        response_code = 200
+        try:
+            self.reimport_batch([package_id], context)
+        except PackageNotHarvestedInFisbrokerError:
+            response_code = 422
+            response_data['error'] = get_error_dict(ERROR_NOT_HARVESTED_BY_FISBROKER)
+        except PackageNotHarvestedError:
             response_code = 422
             response_data['error'] = get_error_dict(ERROR_NOT_HARVESTED)
+        except NoFisbrokerIdError:
+            response_code = 500
+            response_data['error'] = get_error_dict(ERROR_NO_GUID)
+        except NoConnectionError as error:
+            response_code = 500
+            response_data['error'] = get_error_dict(ERROR_NO_CONNECTION)
+            message = response_data['error']['message'].format(error.service_url, str(error.__class__.__name__))
+            response_data['error']['message'] = message
+        except NotFoundInFisbrokerError as error:
+            response_code = 404
+            response_data['error'] = get_error_dict(ERROR_NOT_FOUND_IN_FISBROKER)
+            message = response_data['error']['message'].format(error.fb_guid)
+            response_data['error']['message'] = message
+        except PackageIdDoesNotExistError as error:
+            response_code = 404
+            response_data['error'] = get_error_dict(ERROR_NOT_FOUND_IN_CKAN)
+            message = response_data['error']['message'].format(error.package_id)
+            response_data['error']['message'] = message
+        except FBImportError as error:
+            response_data['error'] =  get_error_dict(ERROR_DURING_IMPORT)
+            message = response_data['error']['message'].format(error.reason)
+            response_data['error']['message'] = message
+        else:
+            response_data = {
+                'success': True,
+                'message': "Package was successfully re-imported."
+            }
 
         response_data['package_id'] = package_id
 

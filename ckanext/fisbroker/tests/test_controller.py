@@ -173,7 +173,12 @@ class TestReimport(FisbrokerTestBase):
         fb_dataset_dict, source, job = self._harvester_setup(unreachable_config)
         package_update(self.context, fb_dataset_dict)
         package_id = fb_dataset_dict['id']
-        response = self.app.get("/api/harvest/reimport?id={}".format(package_id), headers={'Accept':'application/json'}, expect_errors=True)
+        response = self.app.get(
+            "/api/harvest/reimport?id={}".format(package_id),
+            headers={'Accept':'application/json'},
+            expect_errors=True,
+            extra_environ={'REMOTE_USER': self.context['user'].encode('ascii')}
+        )
         _assert_equal(response.status_int, 500)
         content = json.loads(response.body)
         _assert_equal(content['error']['code'], controller.ERROR_NO_CONNECTION)
@@ -357,6 +362,19 @@ class TestReimport(FisbrokerTestBase):
         with assert_raises(NoConnectionError):
             fb_controller.reimport_batch(package_ids, self.context)
 
+    def test_raise_error_for_failed_getrecordbyid_request(self):
+        '''A reimport should fail with a NoConnectionError when the
+           getrecordbyid-Request failed with a timeout.'''
+
+        fb_controller = controller.FISBrokerController()
+        fb_dataset_dict, source, job = self._harvester_setup(
+            FISBROKER_HARVESTER_CONFIG, fb_guid='cannot_connect')
+        package_update(self.context, fb_dataset_dict)
+        package_id = fb_dataset_dict['id']
+
+        package_ids = [package_id]
+        with assert_raises(NoConnectionError):
+            fb_controller.reimport_batch(package_ids, self.context)
 
 class DummyHarvester(SingletonPlugin):
     '''A dummy harvester for testing purposes.'''

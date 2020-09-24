@@ -13,6 +13,7 @@ from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 from lxml import etree
 
 import requests
+from requests.exceptions import Timeout
 
 PORT = 8999
 CSW_PATH = "/csw"
@@ -87,7 +88,10 @@ class MockFISBroker(BaseHTTPRequestHandler):
                         if record_id not in RESPONSES['records']:
                             record_id = "{}_{}".format(
                                 record_id, str(MockFISBroker.count_get_records).rjust(2, '0'))
-                        LOG.debug("looking for {}".format(record_id))
+                        LOG.debug("looking for %s", record_id)
+                        if record_id == "cannot_connect_00":
+                            # mock a timeout happening during a GetRecordById request
+                            raise Timeout()
                         record = RESPONSES['records'].get(record_id)
                         if record:
                             response_code = requests.codes.ok

@@ -42,9 +42,7 @@ class NoFBHarvesterDefined(Exception):
 class ReimportError(Exception):
     '''Basic exception for reimporting datasets from FIS-Broker.'''
 
-    def __init__(self, package_id, error_code=ERROR_UNEXPECTED, msg=None ):
-        if msg is None:
-            msg = "An error occured while trying to reimport package id {}".format(package_id)
+    def __init__(self, package_id, error_code, msg):
         super(ReimportError, self).__init__(msg)
         self.package_id = package_id
         self.error_code = error_code
@@ -103,3 +101,30 @@ class NoConnectionError(ReimportError):
             ERROR_NO_CONNECTION,
             message
         )
+
+        self.service_url = service_url
+
+class NotFoundInFisbrokerError(ReimportError):
+    '''Exception raised when no record with a given guid was found on FIS-Broker.'''
+
+    def __init__(self, package_id, fb_guid):
+        super(NotFoundInFisbrokerError, self).__init__(
+            package_id,
+            ERROR_NOT_FOUND_IN_FISBROKER,
+            ERROR_MESSAGES[ERROR_NOT_FOUND_IN_FISBROKER].format(fb_guid)
+        )
+
+        self.fb_guid = fb_guid
+
+class FBImportError(ReimportError):
+    '''Exception raised when a FIS-Broker record could not imported, possibly due
+       to being invalid (not marked as open data, no license information etc.).'''
+
+    def __init__(self, package_id, reason):
+        super(FBImportError, self).__init__(
+            package_id,
+            ERROR_DURING_IMPORT,
+            ERROR_MESSAGES[ERROR_DURING_IMPORT].format(reason)
+        )
+
+        self.reason = reason
