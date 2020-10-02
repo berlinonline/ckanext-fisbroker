@@ -335,12 +335,12 @@ class FisbrokerPlugin(CSWHarvester):
                         '\'timeout\' is not valid: \'%s\'. Please use whole numbers to indicate seconds until timeout.' % timeout)
 
             if 'timedelta' in config_obj:
-                timedelta = config_obj['timedelta']
+                _timedelta = config_obj['timedelta']
                 try:
-                    config_obj['timedelta'] = int(timedelta)
+                    config_obj['timedelta'] = int(_timedelta)
                 except ValueError:
                     raise ValueError(
-                        '\'timedelta\' is not valid: \'%s\'. Please use whole numbers to indicate timedelta between UTC and harvest source timezone.' % timedelta)
+                        '\'timedelta\' is not valid: \'%s\'. Please use whole numbers to indicate timedelta between UTC and harvest source timezone.' % _timedelta)
 
             config = json.dumps(config_obj, indent=2)
 
