@@ -142,7 +142,7 @@ class FISBrokerController(base.BaseController):
             if not fb_guid:
                 raise NoFisbrokerIdError(package_id)
 
-            ckan_fb_mapping[package_id] = fb_guid
+            ckan_fb_mapping[package.id] = fb_guid
 
         # get the harvest source for FIS-Broker datasets
         fb_source = get_fisbroker_source()
