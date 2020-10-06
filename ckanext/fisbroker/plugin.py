@@ -578,10 +578,11 @@ class FisbrokerPlugin(CSWHarvester):
                          HarvestGatherError.harvest_job_id == HarvestJob.id)) \
                  .order_by(HarvestJob.gather_started.desc())
 
-        # now check them until we find one with no fetch/import errors
-        # (looping rather than doing sql, in case there are lots of objects
-        # and lots of jobs)
+        # now check them until we find one with no fetch/import errors,
+        # which isn't a reimport job
         for job in jobs:
+            if helpers.is_reimport_job(job):
+                continue
             for obj in job.objects:
                 if obj.current is False and \
                         obj.report_status != 'not modified':

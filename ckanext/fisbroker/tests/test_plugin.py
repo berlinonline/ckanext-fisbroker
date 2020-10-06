@@ -9,6 +9,7 @@ from nose.tools import assert_raises
 from owslib.fes import PropertyIsGreaterThanOrEqualTo
 
 from ckan.logic import get_action
+from ckan.logic.action.update import package_update
 
 from ckanext.harvest.queue import (
     gather_stage ,
@@ -35,6 +36,7 @@ from ckanext.fisbroker.plugin import (
     TIMEDELTA_DEFAULT,
 )
 from ckanext.fisbroker.tests import FisbrokerTestBase, _assert_equal
+from ckanext.fisbroker.tests.mock_fis_broker import reset_mock_server
 
 LOG = logging.getLogger(__name__)
 
@@ -633,6 +635,53 @@ class TestPlugin(FisbrokerTestBase):
         _assert_equal(constraint.literal, PropertyIsGreaterThanOrEqualTo('modified', import_since).literal)
         _assert_equal(constraint.propertyname, PropertyIsGreaterThanOrEqualTo(
             'modified', import_since).propertyname)
+
+    def test_last_error_free_does_not_return_reimport_job(self):
+        '''Test that reimport jobs are ignored for determining
+           the last error-free job.'''
+
+        # do a successful job
+        source, job_a = self._create_source_and_job()
+        object_ids = gather_stage(FisbrokerPlugin(), job_a)
+        for object_id in object_ids:
+            harvest_object = HarvestObject.get(object_id)
+            fetch_and_import_stages(FisbrokerPlugin(), harvest_object)
+        job_a.status = u'Finished'
+        job_a.save()
+
+        LOG.debug("successful job done ...")
+
+        # do an unsuccessful job
+        # This harvest job should fail, because the mock FIS-broker will look for a different
+        # file on the second harvest run, will not find it and return a "no_record_found"
+        # error.
+        job_b = self._create_job(source.id)
+        object_ids = gather_stage(FisbrokerPlugin(), job_b)
+        for object_id in object_ids:
+            harvest_object = HarvestObject.get(object_id)
+            fetch_and_import_stages(FisbrokerPlugin(), harvest_object)
+        job_b.status = u'Finished'
+        job_b.save()
+
+        LOG.debug("unsuccessful job done ...")
+
+        # reset the mock server's counter
+        reset_mock_server(1)
+
+        # do a reimport job
+        package_id = "3d-gebaudemodelle-im-level-of-detail-2-lod-2-wms-f2a8a483"
+        self._get_test_app().get(
+            url="/api/harvest/reimport?id={}".format(package_id),
+            headers={'Accept': 'application/json'},
+            extra_environ={'REMOTE_USER': self.context['user'].encode('ascii')}
+        )
+
+        LOG.debug("reimport job done ...")
+
+        new_job = self._create_job(source.id)
+        last_error_free_job = FisbrokerPlugin().last_error_free_job(new_job)
+        # job_a should be the last error free job:
+        _assert_equal(last_error_free_job.id, job_a.id)
 
     def test_import_since_date_is_none_if_no_jobs(self):
         '''Test that, if the `import_since` setting is `last_error_free`, but

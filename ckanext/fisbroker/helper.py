@@ -95,10 +95,11 @@ def get_fisbroker_source():
 
     return None
 
-def is_reimport_job(harvest_job_dict):
+def is_reimport_job(harvest_job):
     '''Return `True` if `harvest_job_dict` was a reimport job.'''
 
-    harvest_job = HarvestJob.get(harvest_job_dict['id'])
+    # if isinstance(harvest_job, dict):
+    #     harvest_job = HarvestJob.get(harvest_job['id'])
 
     for harvest_object in harvest_job.objects:
         for extra in harvest_object.extras:

@@ -161,7 +161,7 @@ def start_mock_server(port=PORT):
     mock_server_thread.setDaemon(True)
     mock_server_thread.start()
 
-def reset_mock_server():
+def reset_mock_server(counter=0):
     """Reset the mock FIS-Broker."""
 
-    MockFISBroker.count_get_records = 0
+    MockFISBroker.count_get_records = counter

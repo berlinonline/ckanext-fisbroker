@@ -206,14 +206,6 @@ class FISBrokerController(base.BaseController):
         harvest_job.finished = datetime.datetime.utcnow()
         harvest_job.save()
 
-        LOG.debug("job: %s", dir(harvest_job))
-        LOG.debug("job.objects: %s", [hob.extras for hob in harvest_job.objects])
-
-        if is_reimport_job(harvest_job):
-            LOG.debug("yay!")
-        else:
-            LOG.debug("nay...")
-
         return reimported_packages
 
     def reimport(self, package_id, direct_call=False, context=None):
