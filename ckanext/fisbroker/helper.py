@@ -8,6 +8,8 @@ from ckan import model
 from ckan.model.package import Package
 from ckan.plugins import toolkit
 
+from ckanext.harvest.model import HarvestJob
+
 from ckanext.fisbroker import HARVESTER_ID
 
 LOG = logging.getLogger(__name__)
@@ -92,3 +94,14 @@ def get_fisbroker_source():
             return source
 
     return None
+
+def is_reimport_job(harvest_job_dict):
+    '''Return `True` if `harvest_job_dict` was a reimport job.'''
+
+    harvest_job = HarvestJob.get(harvest_job_dict['id'])
+
+    for harvest_object in harvest_job.objects:
+        for extra in harvest_object.extras:
+            if extra.key == 'type' and extra.value == 'reimport':
+                return True
+        return False

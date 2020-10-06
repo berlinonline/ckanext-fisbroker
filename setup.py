@@ -80,5 +80,8 @@ setup(
         [ckan.plugins]
         fisbroker=ckanext.fisbroker.plugin:FisbrokerPlugin
         dummyharvest=ckanext.fisbroker.tests.test_controller:DummyHarvester
+        [paste.paster_command]
+        fisbroker=ckanext.fisbroker.paster_command:FISBrokerCommand
+
     ''',
 )

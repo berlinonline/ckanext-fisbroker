@@ -50,7 +50,8 @@ from ckanext.fisbroker.helper import (
     dataset_was_harvested,
     harvester_for_package,
     fisbroker_guid,
-    get_fisbroker_source
+    get_fisbroker_source,
+    is_reimport_job,
 )
 from ckanext.fisbroker.plugin import FisbrokerPlugin
 
@@ -173,7 +174,10 @@ class FISBrokerController(base.BaseController):
                                         job=harvest_job,
                                         content=record.xml,
                                         package_id=package_id,
-                                        extras=[HarvestObjectExtra(key='status',value='change')])
+                                        extras=[
+                                            HarvestObjectExtra(key='status',value='change'),
+                                            HarvestObjectExtra(key='type',value='reimport'),
+                                        ])
                     obj.save()
 
                     assert obj, obj.content
@@ -201,6 +205,14 @@ class FISBrokerController(base.BaseController):
         harvest_job.status = u'Finished'
         harvest_job.finished = datetime.datetime.utcnow()
         harvest_job.save()
+
+        LOG.debug("job: %s", dir(harvest_job))
+        LOG.debug("job.objects: %s", [hob.extras for hob in harvest_job.objects])
+
+        if is_reimport_job(harvest_job):
+            LOG.debug("yay!")
+        else:
+            LOG.debug("nay...")
 
         return reimported_packages
 
