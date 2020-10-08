@@ -130,8 +130,8 @@ class FISBrokerResourceAnnotator:
         return sorted(resources, key=lambda resource: resource.get('weight', default_weight))
 
     def annotate_all_resources(self, resources):
-        '''Assign meaningful metadata to all FIS-Broker resource objects. Ensure there is a 
-           `getCapabilities` resource.'''
+        '''Assign meaningful metadata to all FIS-Broker resource objects. Ensure there is a
+           `getCapabilities` resource (unless its an ATOM feed).'''
 
         resources = [self.annotate_resource(resource)
                      for resource in resources]
@@ -139,13 +139,14 @@ class FISBrokerResourceAnnotator:
 
         res_dict = { resource['internal_function']: resource for resource in resources }
         if 'api_endpoint' in res_dict and 'api_description' not in res_dict:
-            res_format = res_dict['api_endpoint']['format'].lower()
-            url = '{}?{}'.format(res_dict['api_endpoint']['url'],
-                                 FISBrokerResourceAnnotator.getcapabilities_query(res_format))
-            url = normalize_url(url)
-            resource = {
-                'url': url
-            }
-            resources.append(self.annotate_service_resource(resource))
+            res_format = res_dict['api_endpoint']['format']
+            if res_format != FORMAT_ATOM:
+                url = '{}?{}'.format(res_dict['api_endpoint']['url'],
+                                     FISBrokerResourceAnnotator.getcapabilities_query(res_format.lower()))
+                url = normalize_url(url)
+                resource = {
+                    'url': url
+                }
+                resources.append(self.annotate_service_resource(resource))
 
         return self.sort_resources(resources)
