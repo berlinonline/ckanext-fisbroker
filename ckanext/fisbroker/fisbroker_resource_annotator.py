@@ -108,7 +108,6 @@ class FISBrokerResourceAnnotator:
         elif self.is_fis_broker_service_page(resource['url']):
             resource['name'] = "Serviceseite im FIS-Broker"
             resource['format'] = "HTML"
-            resource['description'] = "Serviceseite im FIS-Broker"
             resource['internal_function'] = FUNCTION_WEB_INTERFACE
             resource['weight'] = 20
         elif 'description' in resource:
