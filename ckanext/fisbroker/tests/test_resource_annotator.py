@@ -109,7 +109,6 @@ class TestResourceAnnotator(object):
 
             _assert_equal(converted_resource['url'], url)
             _assert_equal(converted_resource['name'], "Serviceseite im FIS-Broker")
-            _assert_equal(converted_resource['description'], "Serviceseite im FIS-Broker")
             _assert_equal(converted_resource['format'], FORMAT_HTML)
             _assert_equal(converted_resource['internal_function'], FUNCTION_WEB_INTERFACE)
             assert not converted_resource['main']
@@ -217,12 +216,11 @@ class TestResourceAnnotator(object):
                 'description': 'API-Endpunkt des WFS-Service. Weitere Informationen unter https://www.ogc.org/standards/wfs'
             },
             {
-                'description': 'Serviceseite im FIS-Broker',
+                'name': 'Serviceseite im FIS-Broker',
                 'weight': 20,
                 'format': FORMAT_HTML,
                 'url': 'https://fbinter.stadt-berlin.de/fb?loginkey=showMap&mapId=nsg_lsg@senstadt', 'internal_function': 'web_interface',
                 'main': False,
-                'name': 'Serviceseite im FIS-Broker'
             },
             {
                 'description': 'Technische Beschreibung',
