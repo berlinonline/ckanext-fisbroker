@@ -9,6 +9,9 @@ from ckan.lib import cli
 
 from ckanext.fisbroker import HARVESTER_ID
 import ckanext.fisbroker.controller as controller
+from ckanext.fisbroker.plugin import FisbrokerPlugin
+
+from ckanext.harvest.model import HarvestSource
 
 LOG = logging.getLogger(__name__)
 
@@ -30,6 +33,11 @@ class FISBrokerCommand(cli.CkanCommand):
           all datasets by all instances of the FIS-Broker harvester (if no options
           are used), or all datasets by the FIS-Broker harvester instance with
           {source-id}, or the single dataset identified by {dataset-id}.
+
+      fisbroker [-s {source-id}] last_successful_job
+        - Show the last successful job that was not a reimport job, either
+          of the harvester instance specified by {source-id}, or by
+          all instances.
     '''
 
     summary = __doc__.split('\n')[0]
@@ -194,7 +202,26 @@ class FISBrokerCommand(cli.CkanCommand):
                     sources = [ source.get('id') for source in self.list_sources() ]
                 for source in sources:
                     package_ids += [package['name'] for package in self.list_packages(source)]
-            LOG.debug(package_ids)
+            start = time.time()
             self.reimport_dataset(package_ids)
+            end = time.time()
+            LOG.debug("This took %f seconds", end - start)
+        elif cmd == 'last_successful_job':
+            class MockHarvestJob:
+                pass
+            sources = []
+            if self.options.source_id:
+                LOG.debug("finding last successful job from a single source: %s ...",
+                            self.options.source_id)
+                sources = [unicode(self.options.source_id)]
+            else:
+                LOG.debug("finding last successful job from all sources ...")
+                sources = [source.get('id') for source in self.list_sources()]
+            for source in sources:
+                harvest_job = MockHarvestJob()
+                harvest_job.source = HarvestSource.get(source)
+                harvest_job.id = 'fakeid'
+                last_successful_job = FisbrokerPlugin.last_error_free_job(harvest_job)
+                LOG.debug(last_successful_job)
         else:
             print 'Command %s not recognized' % cmd
