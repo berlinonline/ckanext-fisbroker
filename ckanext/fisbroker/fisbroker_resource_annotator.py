@@ -112,7 +112,11 @@ class FISBrokerResourceAnnotator:
             resource['internal_function'] = FUNCTION_WEB_INTERFACE
             resource['weight'] = 20
         elif 'description' in resource:
-            resource['name'] = resource['description']
+            if resource['description']:
+                resource['name'] = resource['description']
+            else:
+                if resource['url'].endswith(".html"):
+                    resource['name'] = resource['url'].split("/").pop()
             resource['internal_function'] = FUNCTION_DOCUMENTATION
             resource['weight'] = 30
         else:
