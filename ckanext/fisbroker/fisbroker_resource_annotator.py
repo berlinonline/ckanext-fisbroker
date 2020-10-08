@@ -27,8 +27,8 @@ class FISBrokerResourceAnnotator:
         '''Build the query string for a GetCapabilities query to either a WMS or WFS service.
            Return None if `service` is not one of [ 'wms', 'wfs' ].'''
         if service not in VALID_SERVICE_TYPES:
-            raise ValueError("Service must be one of [ {} ].".format(
-                ', '.join(VALID_SERVICE_TYPES)))
+            raise ValueError("Service must be one of [ {} ], is '{}'.".format(
+                ', '.join(VALID_SERVICE_TYPES), service))
         return "service={}&request=GetCapabilities&version={}".format(service, FISBrokerResourceAnnotator.service_version(service))
 
     @staticmethod
