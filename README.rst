@@ -62,8 +62,8 @@ You can get the documentation for the paster command as follows:
          fisbroker list_sources
            - List all instances of the FIS-Broker harvester.
    
-           - List the ids and titles of all datasets harvested by the
          fisbroker [-s {source-id}] list_datasets
+           - List the ids and titles of all datasets harvested by the
              FIS-Broker harvester. Either of all instances or of the
              one specified by {source-id}.
    
