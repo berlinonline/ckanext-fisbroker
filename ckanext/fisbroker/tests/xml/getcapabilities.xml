@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<csw:Capabilities xmlns:csw="http://www.opengis.net/cat/csw/2.0.2" xmlns:gml="http://www.opengis.net/gml" xmlns:ogc="http://www.opengis.net/ogc" xmlns:ows="http://www.opengis.net/ows" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="2.0.2" updateSequence="0">
+  <ows:ServiceIdentification>
+    <ows:Title>FIS-Broker CSW-Service SenStadtWohn Berlin</ows:Title>
+    <ows:Abstract>FIS-Broker - Catalog Service Web der Senatsverwaltung für Stadtentwicklung und Wohnen Berlin</ows:Abstract>
+    <ows:Keywords>
+      <ows:Keyword>CSW</ows:Keyword>
+    </ows:Keywords>
+    <ows:ServiceType>CSW</ows:ServiceType>
+    <ows:ServiceTypeVersion>2.0.2</ows:ServiceTypeVersion>
+    <ows:Fees>Nutzungsbedingungen: Für die Verwendung der Daten gelten folgende Nutzungsbestimmungen: http://www.stadtentwicklung.berlin.de/geoinformation/download/nutzIII.pdf - Der Quellenvermerk gemäß §2 lautet "Geoportal Berlin / [Titel des Datensatzes]"</ows:Fees>
+    <ows:AccessConstraints>Es gelten keine Bedingungen.</ows:AccessConstraints>
+  </ows:ServiceIdentification>
+  <ows:ServiceProvider>
+    <ows:ProviderName>Senatsverwaltung für Stadtentwicklung und Wohnen Berlin</ows:ProviderName>
+    <ows:ProviderSite xlink:href="http://www.stadtentwicklung.berlin.de" />
+    <ows:ServiceContact>
+      <ows:IndividualName />
+      <ows:PositionName />
+      <ows:ContactInfo>
+        <ows:Phone>
+          <ows:Voice>+49-30-90139-5255</ows:Voice>
+          <ows:Facsimile />
+        </ows:Phone>
+        <ows:Address>
+          <ows:DeliveryPoint />
+          <ows:City />
+          <ows:AdministrativeArea />
+          <ows:PostalCode />
+          <ows:Country />
+          <ows:ElectronicMailAddress>fisbroker@sensw.berlin.de</ows:ElectronicMailAddress>
+        </ows:Address>
+        <ows:OnlineResource xlink:href="http://www.stadtentwicklung.berlin.de/geoinformation/fis-broker/" xlink:type="simple" />
+      </ows:ContactInfo>
+      <ows:Role>PointOfContact</ows:Role>
+    </ows:ServiceContact>
+  </ows:ServiceProvider>
+  <ows:OperationsMetadata>
+    <ows:Operation name="GetCapabilities">
+      <ows:DCP>
+        <ows:HTTP>
+          <ows:Get xlink:href="{BASE_URL}" />
+          <ows:Post xlink:href="{BASE_URL}">
+            <ows:Constraint name="PostEncoding">
+              <ows:Value>XML</ows:Value>
+            </ows:Constraint>
+          </ows:Post>
+          <ows:Post xlink:href="{BASE_URL}/soap/">
+            <ows:Constraint name="PostEncoding">
+              <ows:Value>SOAP</ows:Value>
+            </ows:Constraint>
+          </ows:Post>
+        </ows:HTTP>
+      </ows:DCP>
+    </ows:Operation>
+    <ows:Operation name="DescribeRecord">
+      <ows:DCP>
+        <ows:HTTP>
+          <ows:Get xlink:href="{BASE_URL}" />
+          <ows:Post xlink:href="{BASE_URL}">
+            <ows:Constraint name="PostEncoding">
+              <ows:Value>XML</ows:Value>
+            </ows:Constraint>
+          </ows:Post>
+          <ows:Post xlink:href="{BASE_URL}/soap/">
+            <ows:Constraint name="PostEncoding">
+              <ows:Value>SOAP</ows:Value>
+            </ows:Constraint>
+          </ows:Post>
+        </ows:HTTP>
+      </ows:DCP>
+      <ows:Parameter name="typeName">
+        <ows:Value>gmd:MD_Metadata</ows:Value>
+      </ows:Parameter>
+      <ows:Parameter name="schemaLanguage">
+        <ows:Value>XMLSCHEMA</ows:Value>
+      </ows:Parameter>
+      <ows:Parameter name="outputFormat">
+        <ows:Value>application/xml</ows:Value>
+        <ows:Value>text/xml</ows:Value>
+      </ows:Parameter>
+      <ows:Parameter name="Namespace">
+        <ows:Value>http://www.isotc211.org/2005/gmd</ows:Value>
+      </ows:Parameter>
+    </ows:Operation>
+    <ows:Operation name="GetDomain">
+      <ows:DCP>
+        <ows:HTTP>
+          <ows:Get xlink:href="{BASE_URL}" />
+          <ows:Post xlink:href="{BASE_URL}">
+            <ows:Constraint name="PostEncoding">
+              <ows:Value>XML</ows:Value>
+            </ows:Constraint>
+          </ows:Post>
+          <ows:Post xlink:href="{BASE_URL}/soap/">
+            <ows:Constraint name="PostEncoding">
+              <ows:Value>SOAP</ows:Value>
+            </ows:Constraint>
+          </ows:Post>
+        </ows:HTTP>
+      </ows:DCP>
+    </ows:Operation>
+    <ows:Operation name="GetRecords">
+      <ows:DCP>
+        <ows:HTTP>
+          <ows:Get xlink:href="{BASE_URL}" />
+          <ows:Post xlink:href="{BASE_URL}">
+            <ows:Constraint name="PostEncoding">
+              <ows:Value>XML</ows:Value>
+            </ows:Constraint>
+          </ows:Post>
+          <ows:Post xlink:href="{BASE_URL}/soap/">
+            <ows:Constraint name="PostEncoding">
+              <ows:Value>SOAP</ows:Value>
+            </ows:Constraint>
+          </ows:Post>
+        </ows:HTTP>
+      </ows:DCP>
+      <ows:Parameter name="typeName">
+        <ows:Value>gmd:MD_Metadata</ows:Value>
+      </ows:Parameter>
+      <ows:Parameter name="outputFormat">
+        <ows:Value>application/xml</ows:Value>
+        <ows:Value>text/xml</ows:Value>
+      </ows:Parameter>
+      <ows:Parameter name="outputSchema">
+        <ows:Value>http://www.opengis.net/cat/csw/2.0.2</ows:Value>
+        <ows:Value>http://www.isotc211.org/2005/gmd</ows:Value>
+      </ows:Parameter>
+      <ows:Parameter name="resultType">
+        <ows:Value>hits</ows:Value>
+        <ows:Value>results</ows:Value>
+        <ows:Value>validate</ows:Value>
+      </ows:Parameter>
+      <ows:Parameter name="ElementSetName">
+        <ows:Value>brief</ows:Value>
+        <ows:Value>summary</ows:Value>
+        <ows:Value>full</ows:Value>
+      </ows:Parameter>
+      <ows:Parameter name="CONSTRAINTLANGUAGE">
+        <ows:Value>Filter</ows:Value>
+      </ows:Parameter>
+      <ows:Constraint name="SupportedISOQueryables">
+        <ows:Value>Identifier</ows:Value>
+        <ows:Value>Language</ows:Value>
+        <ows:Value>OperatesOn</ows:Value>
+        <ows:Value>OperatesOnIdentifier</ows:Value>
+        <ows:Value>OperatesOnName</ows:Value>
+        <ows:Value>ParentIdentifier</ows:Value>
+        <ows:Value>ResourceIdentifier</ows:Value>
+        <ows:Value>RevisionDate</ows:Value>
+        <ows:Value>ServiceType</ows:Value>
+      </ows:Constraint>
+      <ows:Constraint name="AdditionalQueryables">
+        <ows:Value>AccessConstraints</ows:Value>
+        <ows:Value>Classification</ows:Value>
+        <ows:Value>ConditionApplyingToAccessAndUse</ows:Value>
+        <ows:Value>Degree</ows:Value>
+        <ows:Value>Lineage</ows:Value>
+        <ows:Value>OtherConstraints</ows:Value>
+        <ows:Value>SpecificationDate</ows:Value>
+        <ows:Value>SpecificationDateType</ows:Value>
+        <ows:Value>SpecificationTitle</ows:Value>
+      </ows:Constraint>
+    </ows:Operation>
+    <ows:Operation name="GetRecordById">
+      <ows:DCP>
+        <ows:HTTP>
+          <ows:Get xlink:href="{BASE_URL}" />
+          <ows:Post xlink:href="{BASE_URL}">
+            <ows:Constraint name="PostEncoding">
+              <ows:Value>XML</ows:Value>
+            </ows:Constraint>
+          </ows:Post>
+          <ows:Post xlink:href="{BASE_URL}/soap/">
+            <ows:Constraint name="PostEncoding">
+              <ows:Value>SOAP</ows:Value>
+            </ows:Constraint>
+          </ows:Post>
+        </ows:HTTP>
+      </ows:DCP>
+      <ows:Parameter name="outputFormat">
+        <ows:Value>application/xml</ows:Value>
+        <ows:Value>text/xml</ows:Value>
+      </ows:Parameter>
+      <ows:Parameter name="outputSchema">
+        <ows:Value>http://www.opengis.net/cat/csw/2.0.2</ows:Value>
+        <ows:Value>http://www.isotc211.org/2005/gmd</ows:Value>
+      </ows:Parameter>
+      <ows:Parameter name="ElementSetName">
+        <ows:Value>brief</ows:Value>
+        <ows:Value>summary</ows:Value>
+        <ows:Value>full</ows:Value>
+      </ows:Parameter>
+    </ows:Operation>
+    <ows:Operation name="Transaction">
+      <ows:DCP>
+        <ows:HTTP>
+          <ows:Post xlink:href="{BASE_URL}">
+            <ows:Constraint name="PostEncoding">
+              <ows:Value>XML</ows:Value>
+            </ows:Constraint>
+          </ows:Post>
+        </ows:HTTP>
+      </ows:DCP>
+    </ows:Operation>
+    <ows:Operation name="Harvest">
+      <ows:DCP>
+        <ows:HTTP>
+          <ows:Get xlink:href="{BASE_URL}" />
+          <ows:Post xlink:href="{BASE_URL}">
+            <ows:Constraint name="PostEncoding">
+              <ows:Value>XML</ows:Value>
+            </ows:Constraint>
+          </ows:Post>
+        </ows:HTTP>
+      </ows:DCP>
+      <ows:Parameter name="ResourceType">
+        <ows:Value>http://www.isotc211.org/2005/gmd</ows:Value>
+      </ows:Parameter>
+      <ows:Parameter name="ResourceFormat">
+        <ows:Value>application/xml</ows:Value>
+      </ows:Parameter>
+    </ows:Operation>
+    <ows:Constraint name="PostEncoding">
+      <ows:Value>SOAP</ows:Value>
+    </ows:Constraint>
+    <ows:Constraint name="IsoProfiles">
+      <ows:Value>http://www.isotc211.org/2005/gmd</ows:Value>
+    </ows:Constraint>
+  </ows:OperationsMetadata>
+  <ogc:Filter_Capabilities>
+    <ogc:Spatial_Capabilities>
+      <ogc:GeometryOperands>
+        <ogc:GeometryOperand>gml:Envelope</ogc:GeometryOperand>
+      </ogc:GeometryOperands>
+      <ogc:SpatialOperators>
+        <ogc:SpatialOperator name="BBOX" />
+      </ogc:SpatialOperators>
+    </ogc:Spatial_Capabilities>
+    <ogc:Scalar_Capabilities>
+      <ogc:ComparisonOperators>
+        <ogc:ComparisonOperator>Between</ogc:ComparisonOperator>
+        <ogc:ComparisonOperator>EqualTo</ogc:ComparisonOperator>
+        <ogc:ComparisonOperator>GreaterThan</ogc:ComparisonOperator>
+        <ogc:ComparisonOperator>GreaterThanEqualTo</ogc:ComparisonOperator>
+        <ogc:ComparisonOperator>LessThan</ogc:ComparisonOperator>
+        <ogc:ComparisonOperator>LessThanEqualTo</ogc:ComparisonOperator>
+        <ogc:ComparisonOperator>Like</ogc:ComparisonOperator>
+        <ogc:ComparisonOperator>NotEqualTo</ogc:ComparisonOperator>
+        <ogc:ComparisonOperator>NullCheck</ogc:ComparisonOperator>
+      </ogc:ComparisonOperators>
+    </ogc:Scalar_Capabilities>
+    <ogc:Id_Capabilities>
+      <ogc:FID />
+    </ogc:Id_Capabilities>
+  </ogc:Filter_Capabilities>
+</csw:Capabilities>
+

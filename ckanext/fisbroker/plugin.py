@@ -1,198 +1,516 @@
 # coding: utf-8
 
+from datetime import datetime, timedelta
+import json
 import logging
+import os
+import re
+
+from owslib.fes import PropertyIsGreaterThanOrEqualTo
+from sqlalchemy import exists
+
+from ckan import model
+from ckan.lib.munge import munge_title_to_name
 import ckan.plugins as plugins
 import ckan.plugins.toolkit as toolkit
+from ckanext.harvest.model import (
+    HarvestJob ,
+    HarvestGatherError ,
+)
 from ckanext.spatial.interfaces import ISpatialHarvester
 from ckanext.spatial.harvesters.csw import CSWHarvester
 from ckanext.spatial.validation.validation import BaseValidator
+from ckanext.fisbroker import HARVESTER_ID
+from ckanext.fisbroker.fisbroker_resource_annotator import FISBrokerResourceAnnotator
+import ckanext.fisbroker.helper as helpers
 
-import json
+LOG = logging.getLogger(__name__)
+TIMEDELTA_DEFAULT = 0
+TIMEOUT_DEFAULT = 20
 
-log = logging.getLogger(__name__)
+# https://fbinter.stadt-berlin.de/fb/csw
 
-# http://fbinter.stadt-berlin.de/fb/csw
+
+def marked_as_opendata(data_dict):
+    '''Check if `data_dict` is marked as Open Data. If it is,
+       return True, otherwise False.'''
+
+    iso_values = data_dict['iso_values']
+
+    # checking for 'opendata' tag
+    tags = iso_values['tags']
+    if not 'opendata' in tags:
+        return False
+    return True
+
+
+def marked_as_service_resource(data_dict):
+    '''Check if `data_dict` is marked as a service resource (as
+       opposed to a dataset resource). If it is, return True,
+       otherwise False.'''
+
+    iso_values = data_dict['iso_values']
+    return 'service' in iso_values['resource-type']
+
+
+def filter_tags(tags, simple_tag_list, complex_tag_list):
+    '''Check for the presence of all elements of `tags` in `simple_tag_list`
+       (each element just a string), if present remove from `complex_tag_list`
+       (each element a dict) and return `complex_tag_list`.
+       All occurrences of a tag in `complex_tag_list` are removed, not just
+       the first one.'''
+
+    for tag in tags:
+        if tag in simple_tag_list:
+            complex_tag = {'name': tag}
+            while complex_tag in complex_tag_list:
+                complex_tag_list.remove(complex_tag)
+
+    return complex_tag_list
+
+
+def extract_contact_info(data_dict):
+    '''Extract `author`, `maintainer` and `maintainer_email` dataset metadata from
+       the CSW resource's ISO representation.'''
+
+    contact_info = {}
+    iso_values = data_dict['iso_values']
+
+    if 'responsible-organisation' in iso_values and iso_values['responsible-organisation']:
+        resp_org = iso_values['responsible-organisation'][0]
+        if 'organisation-name' in resp_org and resp_org['organisation-name']:
+            contact_info['author'] = resp_org['organisation-name']
+        if 'contact-info' in resp_org and 'email' in resp_org['contact-info'] and resp_org['contact-info']['email']:
+            contact_info['maintainer_email'] = resp_org['contact-info']['email']
+        if 'individual-name' in resp_org:
+            contact_info['maintainer'] = resp_org['individual-name']
+
+    return contact_info
+
+
+def extract_license_and_attribution(data_dict):
+    '''Extract `license_id` and `attribution_text` dataset metadata from
+       the CSW resource's ISO representation.'''
+
+    license_and_attribution = {}
+    iso_values = data_dict['iso_values']
+
+    if 'limitations-on-public-access' in iso_values:
+        for restriction in iso_values['limitations-on-public-access']:
+            try:
+                structured = json.loads(restriction)
+                license_and_attribution['license_id'] = structured['id']
+                license_and_attribution['attribution_text'] = structured['quelle']
+            except ValueError:
+                LOG.info('could not parse as JSON: %s', restriction)
+
+    # fix bad DL-DE-BY id, maybe remove eventually?
+    if 'license_id' in license_and_attribution and license_and_attribution['license_id'] == "dl-de-by-2-0":
+        license_and_attribution['license_id'] = "dl-de-by-2.0"
+        LOG.info("fix bad DL-DE-BY id")
+
+    return license_and_attribution
+
+
+def extract_reference_dates(data_dict):
+    '''Extract `date_released` and `date_updated` dataset metadata from
+       the CSW resource's ISO representation.'''
+
+    reference_dates = {}
+    iso_values = data_dict['iso_values']
+
+    if 'dataset-reference-date' in iso_values and iso_values['dataset-reference-date']:
+        for date in iso_values['dataset-reference-date']:
+            if date['type'] == 'revision':
+                LOG.info('found revision date, using as date_updated')
+                reference_dates['date_updated'] = date['value']
+            if date['type'] == 'creation':
+                LOG.info('found creation date, using as date_released')
+                reference_dates['date_released'] = date['value']
+            if date['type'] == 'publication' and 'date_released' not in reference_dates:
+                LOG.info('found publication date and no prior date_released, using as date_released')
+                reference_dates['date_released'] = date['value']
+
+        if 'date_released' not in reference_dates and 'date_updated' in reference_dates:
+            LOG.info('date_released not set, but date_updated is: using date_updated as date_released')
+            reference_dates['date_released'] = reference_dates['date_updated']
+
+        # we always want to set date_updated as well, to prevent confusing
+        # Datenportal's ckan_import module:
+        if 'date_updated' not in reference_dates:
+            reference_dates['date_updated'] = reference_dates['date_released']
+
+    return reference_dates
+
+def extract_url(resources):
+    '''Picks an URL from the list of resources best suited for the dataset's `url` metadatum.'''
+
+    url = None
+
+    for resource in resources:
+        internal_function = resource.get('internal_function')
+        if internal_function == 'web_interface':
+            return resource['url']
+        elif internal_function == 'api':
+            url = resource['url']
+
+    return url
+
+def extract_preview_markup(data_dict):
+    '''If the dataset's ISO values contain a preview image, generate markdown
+       for that and return. Else return None.'''
+
+    iso_values = data_dict['iso_values']
+    package_dict = data_dict['package_dict']
+
+    preview_graphics = iso_values.get("browse-graphic", [])
+    for preview_graphic in preview_graphics:
+        preview_graphic_title = preview_graphic.get('description', None)
+        if preview_graphic_title == u"Vorschaugrafik":
+            preview_graphic_title = u"Vorschaugrafik zu Datensatz '{}'".format(
+                package_dict['title'])
+            preview_graphic_path = preview_graphic.get('file', None)
+            if preview_graphic_path:
+                preview_markup = u"![{}]({})".format(
+                    preview_graphic_title, preview_graphic_path)
+                return preview_markup
+
+    return None
+
+def generate_title(data_dict):
+    ''' We can have different service datasets with the same
+    name. We don't want that, so we add the service resource's
+    format to make the title unique.'''
+
+    package_dict = data_dict['package_dict']
+
+    title = package_dict['title']
+    resources = package_dict['resources']
+
+    main_resources = [resource for resource in resources if resource.get('main', False)]
+    if main_resources:
+        main_resource = main_resources.pop()
+        resource_format = main_resource.get('format', None)
+        if resource_format is not None:
+            title = u"{0} - [{1}]".format(title, resource_format)
+
+    return title
+
+def generate_name(data_dict):
+    '''Generate a unique name based on the package's title and FIS-Broker
+       guid.'''
+
+    iso_values = data_dict['iso_values']
+    package_dict = data_dict['package_dict']
+
+    name = munge_title_to_name(package_dict['title'])
+    name = re.sub('-+', '-', name)
+    # ensure we don't exceed the allowed name length of 100:
+    # (100-len(guid_part)-1)
+    name = name[:91].strip('-')
+
+    guid = iso_values['guid']
+    guid_part = guid.split('-')[0]
+    name = "{0}-{1}".format(name, guid_part)
+    return name
+
+def extras_as_list(extras_dict):
+    '''Convert a simple extras dict to a list of key/value dicts.
+       Values that are themselves lists or dicts (as opposed to strings)
+       will be converted to JSON-strings.'''
+
+    extras_list = []
+    for key, value in extras_dict.iteritems():
+        if isinstance(value, (list, dict)):
+            extras_list.append({'key': key, 'value': json.dumps(value)})
+        else:
+            extras_list.append({'key': key, 'value': value})
+
+    return extras_list
+
 
 class FisbrokerPlugin(CSWHarvester):
-    plugins.implements(plugins.IConfigurer)
+    '''Main plugin class of the ckanext-fisbroker extension.'''
 
+    plugins.implements(plugins.IConfigurer)
+    plugins.implements(plugins.ITemplateHelpers)
+    plugins.implements(plugins.IRoutes, inherit=True)
     plugins.implements(ISpatialHarvester, inherit=True)
 
+    import_since_keywords = ["last_error_free", "big_bang"]
+
     def extras_dict(self, extras_list):
+        '''Convert input `extras_list` to a conventional extras dict.'''
         extras_dict = {}
         for item in extras_list:
             extras_dict[item['key']] = item['value']
         return extras_dict
 
+    def get_import_since_date(self, harvest_job):
+        '''Get the `import_since` config as a string (property of
+           the query constraint). Handle special values such as
+           `last_error_free` and `big bang`.'''
+
+        if not 'import_since' in self.source_config:
+            return None
+        import_since = self.source_config['import_since']
+        if import_since == 'last_error_free':
+            last_error_free_job = self.last_error_free_job(harvest_job)
+            LOG.debug('Last error-free job: %r', last_error_free_job)
+            if last_error_free_job:
+                gather_time = (last_error_free_job.gather_started +
+                               timedelta(hours=self.get_timedelta()))
+                return gather_time.strftime("%Y-%m-%dT%H:%M:%S%z")
+            else:
+                return None
+        elif import_since == 'big_bang':
+            # looking since big bang means no date constraint
+            return None
+        return import_since
+
+    def get_constraints(self, harvest_job):
+        '''Compute and get the query constraint for requesting datasets from
+           FIS-Broker.'''
+        date = self.get_import_since_date(harvest_job)
+        if date:
+            LOG.info("date constraint: %s", date)
+            date_query = PropertyIsGreaterThanOrEqualTo('modified', date)
+            return [date_query]
+        else:
+            LOG.info("no date constraint")
+            return []
+
+    def get_timeout(self):
+        '''Get the `timeout` config as a string (timeout threshold for requests
+           to FIS-Broker).'''
+        if 'timeout' in self.source_config:
+            return int(self.source_config['timeout'])
+        return TIMEOUT_DEFAULT
+
+    def get_timedelta(self):
+        '''Get the `timedelta` config as a string (timezone difference between
+           FIS-Broker server and harvester server).'''
+        if 'timedelta' in self.source_config:
+            return int(self.source_config['timedelta'])
+        return TIMEDELTA_DEFAULT
+
+    # IHarvester
+
+    def info(self):
+        '''Provides a dict with basic metadata about this plugin.
+           Implementation of ckanext.harvest.interfaces.IHarvester.info()
+           https://github.com/ckan/ckanext-harvest/blob/master/ckanext/harvest/interfaces.py
+        '''
+        return {
+            'name': HARVESTER_ID,
+            'title': 'FIS Broker',
+            'description': 'A harvester specifically for Berlin\'s FIS Broker geo data CSW service.'
+        }
+
+    def validate_config(self, config):
+        '''Implementation of ckanext.harvest.interfaces.IHarvester.validate_config()
+           https://github.com/ckan/ckanext-harvest/blob/master/ckanext/harvest/interfaces.py
+        '''
+        if not config:
+            return config
+
+        try:
+            config_obj = json.loads(config)
+
+            if 'import_since' in config_obj:
+                import_since = config_obj['import_since']
+                try:
+                    if import_since not in self.import_since_keywords:
+                        datetime.strptime(import_since, "%Y-%m-%d")
+                except ValueError:
+                    raise ValueError('\'import_since\' is not a valid date: \'%s\'. Use ISO8601: YYYY-MM-DD or one of %s.' % (
+                        import_since, self.import_since_keywords))
+
+            if 'timeout' in config_obj:
+                timeout = config_obj['timeout']
+                try:
+                    config_obj['timeout'] = int(timeout)
+                except ValueError:
+                    raise ValueError(
+                        '\'timeout\' is not valid: \'%s\'. Please use whole numbers to indicate seconds until timeout.' % timeout)
+
+            if 'timedelta' in config_obj:
+                _timedelta = config_obj['timedelta']
+                try:
+                    config_obj['timedelta'] = int(_timedelta)
+                except ValueError:
+                    raise ValueError(
+                        '\'timedelta\' is not valid: \'%s\'. Please use whole numbers to indicate timedelta between UTC and harvest source timezone.' % _timedelta)
+
+            config = json.dumps(config_obj, indent=2)
+
+        except ValueError as error:
+            raise error
+
+        return CSWHarvester.validate_config(self, config)
+
     # IConfigurer
 
     def update_config(self, config):
-        toolkit.add_template_directory(config, 'templates')
+        '''
+        Implementation of
+        https://docs.ckan.org/en/latest/extensions/plugin-interfaces.html#ckan.plugins.interfaces.IConfigurer.update_config
+        '''
+        toolkit.add_template_directory(config, os.path.join('theme', 'templates'))
         toolkit.add_public_directory(config, 'public')
         toolkit.add_resource('fanstatic', 'fisbroker')
         config['ckan.spatial.validator.profiles'] = 'always-valid'
 
-    def info(self):
+    # -------------------------------------------------------------------
+    # Implementation ITemplateHelpers
+    # -------------------------------------------------------------------
+
+    def get_helpers(self):
+        '''
+        Implementation of
+        https://docs.ckan.org/en/latest/extensions/plugin-interfaces.html#ckan.plugins.interfaces.ITemplateHelpers.get_helpers
+        '''
         return {
-            'name': 'fisbroker',
-            'title': 'FIS Broker',
-            'description': 'A harvester specifically for Berlin\'s FIS Broker geo data CSW service.'
-            }
+            'berlin_is_fisbroker_package': helpers.is_fisbroker_package,
+            'berlin_fisbroker_guid': helpers.fisbroker_guid,
+            'berlin_package_object': helpers.get_package_object,
+            'berlin_is_reimport_job': helpers.is_reimport_job,
+        }
+
+    # IRoutes:
+
+    def before_map(self, map_):
+        """
+        Implementation of
+        https://docs.ckan.org/en/latest/extensions/plugin-interfaces.html#ckan.plugins.interfaces.IRoutes.before_map
+        """
+        map_.connect(
+            '/dataset/{package_id}/reimport',
+            controller='ckanext.fisbroker.controller:FISBrokerController',
+            action='reimport_browser')
+        map_.connect(
+            '/api/harvest/reimport',
+            controller='ckanext.fisbroker.controller:FISBrokerController',
+            action='reimport_api')
+
+        return map_
+
+    # ISpatialHarvester
 
     def get_validators(self):
-        log.debug("--------- get_validators ----------")
+        '''Implementation of ckanext.spatial.interfaces.ISpatialHarvester.get_validators().
+        https://github.com/ckan/ckanext-spatial/blob/master/ckanext/spatial/interfaces.py
+        '''
+        LOG.debug("--------- get_validators ----------")
         return [AlwaysValid]
 
     def get_package_dict(self, context, data_dict):
-        log.debug("--------- get_package_dict ----------")
+        '''Implementation of ckanext.spatial.interfaces.ISpatialHarvester.get_package_dict().
+        https://github.com/ckan/ckanext-spatial/blob/master/ckanext/spatial/interfaces.py
+        '''
+        LOG.debug("--------- get_package_dict ----------")
 
         if hasattr(data_dict, '__getitem__'):
 
             package_dict = data_dict['package_dict']
             iso_values = data_dict['iso_values']
 
-            log.debug(iso_values['title'])
+            LOG.debug(iso_values['title'])
 
-            # checking for 'opendata' tag
-            tags = iso_values['tags']
-            if not 'opendata' in tags:
-                log.debug("no 'opendata' tag, skipping dataset ...")
-                return False
-            log.debug("this is tagged 'opendata', continuing ...")
-            
+            # checking if marked for Open Data
+            if not marked_as_opendata(data_dict):
+                LOG.debug("no 'opendata' tag, skipping dataset ...")
+                context['error'] = json.dumps({ 'code': 1, 'description': 'not tagged as open data'})
+                return 'skip'
+            LOG.debug("this is tagged 'opendata', continuing ...")
+
             # we're only interested in service resources
-            log.debug("resource type: {0}".format(iso_values['resource-type']))
-            if not 'service' in iso_values['resource-type']:
-                log.debug("this is not a service resource, skipping dataset ...")
-                return False
-            log.debug("this is a service resource, continuing ...")
-            
+            if not marked_as_service_resource(data_dict):
+                LOG.debug("this is not a service resource, skipping dataset ...")
+                context['error'] = json.dumps({'code': 2, 'description': 'not a service resource'})
+                return 'skip'
+            LOG.debug("this is a not service resource, continuing ...")
 
-            # log.debug(iso_values)
-            # log.debug(package_dict)
             extras = self.extras_dict(package_dict['extras'])
-            # log.debug(extras)
 
-            # filter out 'äöü' tag
-            if u'äöü' in tags:
-                package_dict['tags'].remove({'name': u'äöü'})
-
-            # filter out 'opendata' tags, we know it's open data
-            if u'opendata' in tags:
-                package_dict['tags'].remove({'name': u'opendata'})
-            if u'open data' in tags:
-                package_dict['tags'].remove({'name': u'open data'})
-
+            # filter out various tags
+            to_remove = [u'äöü', u'opendata', u'open data']
+            package_dict['tags'] = filter_tags(to_remove, iso_values['tags'], package_dict['tags'])
 
             # Veröffentlichende Stelle / author
             # Datenverantwortliche Stelle / maintainer
             # Datenverantwortliche Stelle Email / maintainer_email
 
-            if 'responsible-organisation' in iso_values:
-                resp_org = iso_values['responsible-organisation'][0]
-                if 'organisation-name' in resp_org:
-                    package_dict['author'] = resp_org['organisation-name']
-                else:
-                    log.error('could not determine responsible organisation name')
-                    return False
-                if 'contact-info' in resp_org:
-                    package_dict['maintainer_email'] = resp_org['contact-info']['email']
-                else:
-                    log.error('could not determine responsible organisation email')
-                    return False
-                if 'individual-name' in resp_org:
-                    package_dict['maintainer'] = resp_org['individual-name']
+            contact_info = extract_contact_info(data_dict)
+
+            if 'author' in contact_info:
+                package_dict['author'] = contact_info['author']
             else:
-                log.error('could not determine responsible organisation')
-                return False
+                LOG.error('could not determine responsible organisation name, skipping ...')
+                context['error'] = json.dumps({'code': 3, 'description': 'no organisation name'})
+                return 'skip'
+
+            if 'maintainer_email' in contact_info:
+                package_dict['maintainer_email'] = contact_info['maintainer_email']
+            else:
+                LOG.error('could not determine responsible organisation email, skipping ...')
+                context['error'] = json.dumps({'code': 4, 'description': 'no responsible organisation email'})
+                return 'skip'
+
+            if 'maintainer' in contact_info:
+                package_dict['maintainer'] = contact_info['maintainer']
 
             # Veröffentlichende Stelle Email / author_email
             # Veröffentlichende Person / extras.username
-            
+
             # license_id
 
-            if 'limitations-on-public-access' in iso_values:
-                for restriction in iso_values['limitations-on-public-access']:
-                    log.info(restriction)
-                    try:
-                        structured = json.loads(restriction)
-                        package_dict['license_id'] = structured['id']
-                    except (ValueError) as e:
-                        log.info('could not parse as JSON: %s' % restriction)
+            license_and_attribution = extract_license_and_attribution(data_dict)
 
-            if not 'license_id' in package_dict:
-                log.error('could not determine license code')
-                return False
+            if 'license_id' not in license_and_attribution:
+                LOG.error('could not determine license code, skipping ...')
+                context['error'] = json.dumps({'code': 5, 'description': 'could not determine license code'})
+                return 'skip'
+
+            package_dict['license_id'] = license_and_attribution['license_id']
+
+            if 'attribution_text' in license_and_attribution:
+                extras['attribution_text'] = license_and_attribution['attribution_text']
 
             # extras.date_released / extras.date_updated
 
-            for date in iso_values['dataset-reference-date']:
-                if date['type'] == 'revision':
-                    log.info('found revision date, using as date_updated')
-                    extras['date_updated'] = date['value']
-                if date['type'] == 'creation':
-                    log.info('found creation date, using as date_released')
-                    extras['date_released'] = date['value']
-                if date['type'] == 'publication' and not 'date_released' in extras:
-                    log.info('found publication date and no prior date_released, using as date_released')
-                    extras['date_released'] = date['value']
+            reference_dates = extract_reference_dates(data_dict)
 
-            if not 'date_released' in extras and 'date_updated' in extras:
-                log.info('date_released not set, but date_updated is: using date_updated as date_released')
-                extras['date_released'] = extras['date_updated']
-                # extras.pop('date_updated', None)
+            if 'date_released' not in reference_dates:
+                LOG.error('could not get anything for date_released from ISO values, skipping ...')
+                context['error'] = json.dumps({'code': 6, 'description': 'no release date'})
+                return 'skip'
 
-            if not 'date_released' in extras:
-                log.error('could not get anything for date_released from ISO values')
-                return False
+            extras['date_released'] = reference_dates['date_released']
 
-            # we always want to set date_updated as well, to prevent confusing 
-            # Datenportal's ckan_import module:
-            if not 'date_updated' in extras:
-                extras['date_updated'] = extras['date_released']
-
-            # URL - strange that this isn't set by default
-            url = iso_values['url']
-            package_dict['url'] = url
+            if 'date_updated' in reference_dates:
+                extras['date_updated'] = reference_dates['date_updated']
 
             # resources
-            resources = package_dict['resources']
-            delete = None
-            # set resource names and formats based on URLs
-            # let's hope this is regular...
-            for resource in resources:
-                if "/feed/" in resource['url']:
-                    resource['name'] = "Atom Feed"
-                    resource['description'] = "Atom Feed"
-                    resource['format'] = "Atom"
-                elif "/wfs/" in resource['url']:
-                    resource['name'] = "WFS Service"
-                    resource['description'] = "WFS Service"
-                    resource['format'] = "WFS"
-                    resource['url'] += "?service=wfs&request=GetCapabilities"
-                elif "/wms/" in resource['url']:
-                    resource['name'] = "WMS Service"
-                    resource['description'] = "WMS Service"
-                    resource['format'] = "WMS"
-                    resource['url'] += "?service=wms&request=GetCapabilities"
-                else:
-                    # If the resource is none of the above, it's just the 
-                    # dataset page in FIS-Broker. We don't want that as
-                    # a resource.
-                    delete = resource
 
-            if delete:
-                resources.remove(delete)
+            annotator = FISBrokerResourceAnnotator()
+            resources = annotator.annotate_all_resources(package_dict['resources'])
+            package_dict['resources'] = helpers.uniq_resources_by_url(resources)
 
-            # We can have different service datasets with the same
-            # name. We don't want that, so we add the service resource's
-            # format to make the title and name unique.
-            resource_format = resources[0]['format']
-            if (resource_format is not None):
-                package_dict['title'] = u"{0} - [{1}]".format(package_dict['title'], resource_format)
-                package_dict['name'] = self._gen_new_name("{0}-{1}".format(package_dict['name'], resource_format.lower()))
-                log.info('package name set to: %s' % package_dict['name'])
+            # URL
+            package_dict['url'] = extract_url(package_dict['resources'])
 
+            # Preview graphic
+            preview_markup = extract_preview_markup(data_dict)
+            if preview_markup:
+                preview_markup = "\n\n" + preview_markup
+                package_dict['notes'] += preview_markup
+
+            # title
+            package_dict['title'] = generate_title(data_dict)
+
+            # name
+            package_dict['name'] = generate_name(data_dict)
 
             # internal dataset type:
 
@@ -204,7 +522,7 @@ class FisbrokerPlugin(CSWHarvester):
 
             # always put in 'geo' group
 
-            package_dict['groups'] = [ {'name': 'geo' } ] 
+            package_dict['groups'] = [{'name': 'geo'}]
 
             # geographical_granularity
 
@@ -218,7 +536,7 @@ class FisbrokerPlugin(CSWHarvester):
 
             # temporal_granularity
 
-            extras['temporal_granularity'] = "Keine"            
+            extras['temporal_granularity'] = "Keine"
             # TODO: can we determine this from the ISO values?
 
             # temporal_coverage-from
@@ -232,26 +550,51 @@ class FisbrokerPlugin(CSWHarvester):
             # TODO: can we determine this from the ISO values?
             # shold be iso_values['temporal-extent-end']
 
-            # log.debug("----- data after get_package_dict -----")
-            # log.debug(package_dict)
+            # LOG.debug("----- data after get_package_dict -----")
+            # LOG.debug(package_dict)
 
-            extras_as_list = []
-            for key, value in extras.iteritems():
-                if isinstance(value, (list, dict)):
-                    extras_as_list.append({'key': key, 'value': json.dumps(value)})
-                else:
-                    extras_as_list.append({'key': key, 'value': value})
-
-            package_dict['extras'] = extras_as_list
+            # extras
+            package_dict['extras'] = extras_as_list(extras)
 
             return package_dict
         else:
-            log.debug('calling get_package_dict on CSWHarvester')
+            LOG.debug('calling get_package_dict on CSWHarvester')
             return CSWHarvester.get_package_dict(self, context, data_dict)
 
+    @classmethod
+    def last_error_free_job(cls, harvest_job):
+        '''Override last_error_free_job() from
+           ckanext.harvest.harvesters.base.HarvesterBase to filter out
+           jobs that were created by a reimport action.'''
 
+        jobs = \
+            model.Session.query(HarvestJob) \
+                 .filter(HarvestJob.source == harvest_job.source) \
+                 .filter(HarvestJob.gather_started != None) \
+                 .filter(HarvestJob.status == 'Finished') \
+                 .filter(HarvestJob.id != harvest_job.id) \
+                 .filter(
+                     ~exists().where(
+                         HarvestGatherError.harvest_job_id == HarvestJob.id)) \
+                 .order_by(HarvestJob.gather_started.desc())
+
+        # now check them until we find one with no fetch/import errors,
+        # which isn't a reimport job
+        for job in jobs:
+            if helpers.is_reimport_job(job):
+                continue
+            for obj in job.objects:
+                if obj.current is False and \
+                        obj.report_status != 'not modified':
+                    # unsuccessful, so go onto the next job
+                    break
+            else:
+                return job
 
 class AlwaysValid(BaseValidator):
+    '''A validator that always validates. Needed because FIS-Broker-XML
+       sometimes doesn't validate, but we don't want to break the harvest on
+       that.'''
 
     name = 'always-valid'
 
@@ -259,7 +602,6 @@ class AlwaysValid(BaseValidator):
 
     @classmethod
     def is_valid(cls, xml):
+        '''Implements ckanext.spatial.validation.validation.BaseValidator.is_valid().'''
 
         return True, []
-
-

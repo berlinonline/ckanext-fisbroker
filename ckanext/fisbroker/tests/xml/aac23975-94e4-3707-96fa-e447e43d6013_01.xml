@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<csw:GetRecordByIdResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2" 
+    xmlns:gco="http://www.isotc211.org/2005/gco" 
+    xmlns:gmd="http://www.isotc211.org/2005/gmd" 
+    xmlns:gmx="http://www.isotc211.org/2005/gmx" 
+    xmlns:gsr="http://www.isotc211.org/2005/gsr" 
+    xmlns:gss="http://www.isotc211.org/2005/gss" 
+    xmlns:gts="http://www.isotc211.org/2005/gts" 
+    xmlns:srv="http://www.isotc211.org/2005/srv" 
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.opengis.net/cat/csw/2.0.2 http://schemas.opengis.net/csw/2.0.2/CSW-discovery.xsd">
+    <gmd:MD_Metadata xsi:schemaLocation="http://www.isotc211.org/2005/gmd http://schemas.opengis.net/csw/2.0.2/profiles/apiso/1.0.0/apiso.xsd">
+        <gmd:fileIdentifier>
+            <gco:CharacterString>aac23975-94e4-3707-96fa-e447e43d6013</gco:CharacterString>
+        </gmd:fileIdentifier>
+        <gmd:language>
+            <gmd:LanguageCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/codelist/ML_gmxCodelists.xml#LanguageCode" codeListValue="ger" />
+        </gmd:language>
+        <gmd:characterSet>
+            <gmd:MD_CharacterSetCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/codelist/ML_gmxCodelists.xml#MD_CharacterSetCode" codeListValue="utf8" />
+        </gmd:characterSet>
+        <gmd:hierarchyLevel>
+            <gmd:MD_ScopeCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/codelist/ML_gmxCodelists.xml#MD_ScopeCode" codeListValue="application" />
+        </gmd:hierarchyLevel>
+        <gmd:hierarchyLevelName>
+            <gco:CharacterString>Fachverfahren</gco:CharacterString>
+        </gmd:hierarchyLevelName>
+        <gmd:contact>
+            <gmd:CI_ResponsibleParty>
+                <gmd:organisationName>
+                    <gco:CharacterString>Senatsverwaltung für Stadtentwicklung und Umwelt, Referat Informationssystem Stadt und Umwelt</gco:CharacterString>
+                </gmd:organisationName>
+                <gmd:contactInfo>
+                    <gmd:CI_Contact>
+                        <gmd:phone>
+                            <gmd:CI_Telephone>
+                                <gmd:voice>
+                                    <gco:CharacterString>++49-30-90139-5257</gco:CharacterString>
+                                </gmd:voice>
+                                <gmd:facsimile>
+                                    <gco:CharacterString>++49-30-90139-5251</gco:CharacterString>
+                                </gmd:facsimile>
+                            </gmd:CI_Telephone>
+                        </gmd:phone>
+                        <gmd:address>
+                            <gmd:CI_Address>
+                                <gmd:deliveryPoint>
+                                    <gco:CharacterString>Fehrbelliner Platz 1</gco:CharacterString>
+                                </gmd:deliveryPoint>
+                                <gmd:city>
+                                    <gco:CharacterString>Berlin</gco:CharacterString>
+                                </gmd:city>
+                                <gmd:administrativeArea>
+                                    <gco:CharacterString>Berlin</gco:CharacterString>
+                                </gmd:administrativeArea>
+                                <gmd:postalCode>
+                                    <gco:CharacterString>10707</gco:CharacterString>
+                                </gmd:postalCode>
+                                <gmd:country>
+                                    <gco:CharacterString>Deutschland</gco:CharacterString>
+                                </gmd:country>
+                                <gmd:electronicMailAddress>
+                                    <gco:CharacterString>fisbroker@sensw.berlin.de</gco:CharacterString>
+                                </gmd:electronicMailAddress>
+                            </gmd:CI_Address>
+                        </gmd:address>
+                        <gmd:onlineResource>
+                            <gmd:CI_OnlineResource>
+                                <gmd:linkage>
+                                    <gmd:URL>http://www.stadtentwicklung.berlin.de/geoinformation/fis-broker/</gmd:URL>
+                                </gmd:linkage>
+                                <gmd:function>
+                                    <gmd:CI_OnLineFunctionCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/codelist/ML_gmxCodelists.xml#CI_OnLineFunctionCode" codeListValue="information" />
+                                </gmd:function>
+                            </gmd:CI_OnlineResource>
+                        </gmd:onlineResource>
+                    </gmd:CI_Contact>
+                </gmd:contactInfo>
+                <gmd:role>
+                    <gmd:CI_RoleCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/codelist/ML_gmxCodelists.xml#CI_RoleCode" codeListValue="pointOfContact" />
+                </gmd:role>
+            </gmd:CI_ResponsibleParty>
+        </gmd:contact>
+        <gmd:dateStamp>
+            <gco:DateTime>2017-01-09T16:36:59</gco:DateTime>
+        </gmd:dateStamp>
+        <gmd:metadataStandardName>
+            <gco:CharacterString>ISO 19115/19119 – BE</gco:CharacterString>
+        </gmd:metadataStandardName>
+        <gmd:metadataStandardVersion>
+            <gco:CharacterString>1.0.0</gco:CharacterString>
+        </gmd:metadataStandardVersion>
+        <gmd:identificationInfo>
+            <gmd:MD_DataIdentification uuid="46420d3f-1869-3ef8-aa52-713bfcce7a45">
+                <gmd:citation>
+                    <gmd:CI_Citation>
+                        <gmd:title>
+                            <gco:CharacterString>3D-Stadtmodell Berlin</gco:CharacterString>
+                        </gmd:title>
+                        <gmd:date>
+                            <gmd:CI_Date>
+                                <gmd:date>
+                                    <gco:Date>2010-07-06</gco:Date>
+                                </gmd:date>
+                                <gmd:dateType>
+                                    <gmd:CI_DateTypeCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/codelist/ML_gmxCodelists.xml#CI_DateTypeCode" codeListValue="revision" />
+                                </gmd:dateType>
+                            </gmd:CI_Date>
+                        </gmd:date>
+                        <gmd:identifier>
+                            <gmd:MD_Identifier>
+                                <gmd:code>
+                                    <gco:CharacterString>https://registry.gdi-de.org/id/de.be.csw/46420d3f-1869-3ef8-aa52-713bfcce7a45</gco:CharacterString>
+                                </gmd:code>
+                            </gmd:MD_Identifier>
+                        </gmd:identifier>
+                    </gmd:CI_Citation>
+                </gmd:citation>
+                <gmd:abstract>
+                    <gco:CharacterString>Der Aufbau und die Nutzung eines virtuellen 3D-Stadtmodells für das Land Berlin ermöglicht die Betrachtung Berlins in der Gegenwart, der Vergangenheit und der Zukunft. Die Integration und Nutzung von vorhandenen und zukünftigen 2D- und 3D-Geoinformationen auf einer innovativen, amtlichen und nachhaltigen Grundlage erlaubt umfassende und vielfältige Anwendungsmöglichkeiten. Zudem wurde durch die Kopplung von Geobasisdaten und Fachinformationen im gebäudescharfen Maßstab ein virtuelles Datenmodell der Stadt aufgebaut, das aktiv in der Stadtplanung, Wirtschaftsförderung und Standortvermarktung eingesetzt wird.
+Im BLC werden Unternehmen und Investoren unter anderem geographische und infrastrukturelle Rahmendaten zum Standort vermittelt. Das System bindet dazu georeferenzierte Fachinformationen in die Darstellung ein und ermöglicht die gezielte Kommunikation von stadträumlichen Daten während der Beratungen für die unterschiedlichsten Zielgruppen.
+Weitere Anwendungen befinden sich in Vorbereitung. So werden beispielhaft die Integrationsmöglichkeiten verschiedenster Informationen aus Stadtplanung, Wirtschaft und Stadtinformation auf der Grundlage gesicherter amtlicher Daten dargestellt, die durch verschiedene Darstellungs  und Informationsebenen visualisiert werden können.</gco:CharacterString>
+                </gmd:abstract>
+                <gmd:pointOfContact>
+                    <gmd:CI_ResponsibleParty>
+                        <gmd:individualName>
+                            <gco:CharacterString>Hr. Fiedler</gco:CharacterString>
+                        </gmd:individualName>
+                        <gmd:organisationName>
+                            <gco:CharacterString>Senatsverwaltung für Wirtschaft, Technologie und Forschung</gco:CharacterString>
+                        </gmd:organisationName>
+                        <gmd:contactInfo>
+                            <gmd:CI_Contact>
+                                <gmd:phone>
+                                    <gmd:CI_Telephone>
+                                        <gmd:voice>
+                                            <gco:CharacterString>++49-30-9013-8305</gco:CharacterString>
+                                        </gmd:voice>
+                                    </gmd:CI_Telephone>
+                                </gmd:phone>
+                                <gmd:address>
+                                    <gmd:CI_Address>
+                                        <gmd:electronicMailAddress>
+                                            <gco:CharacterString>oliver.fiedler@senwtf.berlin.de</gco:CharacterString>
+                                        </gmd:electronicMailAddress>
+                                    </gmd:CI_Address>
+                                </gmd:address>
+                            </gmd:CI_Contact>
+                        </gmd:contactInfo>
+                        <gmd:role>
+                            <gmd:CI_RoleCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/codelist/ML_gmxCodelists.xml#CI_RoleCode" codeListValue="pointOfContact" />
+                        </gmd:role>
+                    </gmd:CI_ResponsibleParty>
+                </gmd:pointOfContact>
+                <gmd:graphicOverview>
+                    <gmd:MD_BrowseGraphic>
+                        <gmd:fileName>
+                            <gco:CharacterString>http://fbinter.stadt-berlin.de/fb_daten/vorschau/fachverfahren/fv_3d_stadtmodell.gif</gco:CharacterString>
+                        </gmd:fileName>
+                    </gmd:MD_BrowseGraphic>
+                </gmd:graphicOverview>
+                <gmd:descriptiveKeywords>
+                    <gmd:MD_Keywords>
+                        <gmd:keyword>
+                            <gco:CharacterString>Wirtschaftsberatung</gco:CharacterString>
+                        </gmd:keyword>
+                        <gmd:keyword>
+                            <gco:CharacterString>Standortvermarktung</gco:CharacterString>
+                        </gmd:keyword>
+                        <gmd:keyword>
+                            <gco:CharacterString>Geodaten</gco:CharacterString>
+                        </gmd:keyword>
+                        <gmd:keyword>
+                            <gco:CharacterString>Geoinformationen</gco:CharacterString>
+                        </gmd:keyword>
+                        <gmd:type>
+                            <gmd:MD_KeywordTypeCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/codelist/ML_gmxCodelists.xml#MD_KeywordTypeCode" codeListValue="theme" />
+                        </gmd:type>
+                    </gmd:MD_Keywords>
+                </gmd:descriptiveKeywords>
+                <gmd:resourceConstraints>
+                    <gmd:MD_LegalConstraints>
+                        <gmd:useLimitation>
+                            <gco:CharacterString>Nutzungsbedingungen: Nutzungsbedingungen noch nicht abschließend formuliert</gco:CharacterString>
+                        </gmd:useLimitation>
+                        <gmd:accessConstraints>
+                            <gmd:MD_RestrictionCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/codelist/ML_gmxCodelists.xml#MD_RestrictionCode" codeListValue="copyright" />
+                        </gmd:accessConstraints>
+                        <gmd:accessConstraints>
+                            <gmd:MD_RestrictionCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/codelist/ML_gmxCodelists.xml#MD_RestrictionCode" codeListValue="license" />
+                        </gmd:accessConstraints>
+                        <gmd:accessConstraints>
+                            <gmd:MD_RestrictionCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/codelist/ML_gmxCodelists.xml#MD_RestrictionCode" codeListValue="intellectualPropertyRights" />
+                        </gmd:accessConstraints>
+                    </gmd:MD_LegalConstraints>
+                </gmd:resourceConstraints>
+                <gmd:language>
+                    <gmd:LanguageCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/codelist/ML_gmxCodelists.xml#LanguageCode" codeListValue="ger" />
+                </gmd:language>
+                <gmd:characterSet>
+                    <gmd:MD_CharacterSetCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/codelist/ML_gmxCodelists.xml#MD_CharacterSetCode" codeListValue="utf8" />
+                </gmd:characterSet>
+                <gmd:extent>
+                    <gmd:EX_Extent>
+                        <gmd:geographicElement>
+                            <gmd:EX_GeographicBoundingBox>
+                                <gmd:extentTypeCode>
+                                    <gco:Boolean>true</gco:Boolean>
+                                </gmd:extentTypeCode>
+                                <gmd:westBoundLongitude>
+                                    <gco:Decimal>12.9709</gco:Decimal>
+                                </gmd:westBoundLongitude>
+                                <gmd:eastBoundLongitude>
+                                    <gco:Decimal>13.8109</gco:Decimal>
+                                </gmd:eastBoundLongitude>
+                                <gmd:southBoundLatitude>
+                                    <gco:Decimal>52.3005</gco:Decimal>
+                                </gmd:southBoundLatitude>
+                                <gmd:northBoundLatitude>
+                                    <gco:Decimal>52.6954</gco:Decimal>
+                                </gmd:northBoundLatitude>
+                            </gmd:EX_GeographicBoundingBox>
+                        </gmd:geographicElement>
+                    </gmd:EX_Extent>
+                </gmd:extent>
+            </gmd:MD_DataIdentification>
+        </gmd:identificationInfo>
+        <gmd:dataQualityInfo>
+            <gmd:DQ_DataQuality>
+                <gmd:scope>
+                    <gmd:DQ_Scope>
+                        <gmd:level>
+                            <gmd:MD_ScopeCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/codelist/ML_gmxCodelists.xml#MD_ScopeCode" codeListValue="dataset" />
+                        </gmd:level>
+                    </gmd:DQ_Scope>
+                </gmd:scope>
+                <gmd:lineage>
+                    <gmd:LI_Lineage>
+                        <gmd:statement>
+                            <gco:CharacterString>Daten aus der Berliner Verwaltung</gco:CharacterString>
+                        </gmd:statement>
+                    </gmd:LI_Lineage>
+                </gmd:lineage>
+            </gmd:DQ_DataQuality>
+        </gmd:dataQualityInfo>
+    </gmd:MD_Metadata>
+</csw:GetRecordByIdResponse>
+

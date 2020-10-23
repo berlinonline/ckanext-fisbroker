@@ -1,0 +1,17 @@
+os: linux
+dist: trusty
+
+language: python
+python:
+    - "2.7"
+env:
+    CKANVERSION=2.7
+install:
+    - bash bin/travis-build.bash
+    - pip install coveralls
+services:
+    - postgresql
+    - redis
+script: sh bin/travis-run.sh
+after_success:
+    - coveralls

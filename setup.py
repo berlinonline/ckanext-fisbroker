@@ -5,7 +5,7 @@ from os import path
 here = path.abspath(path.dirname(__file__))
 
 # Get the long description from the relevant file
-with open(path.join(here, 'README.md'), encoding='utf-8') as f:
+with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
@@ -14,17 +14,17 @@ setup(
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # http://packaging.python.org/en/latest/tutorial.html#version
-    version='0.0.1',
+    version='1.0.0',
 
-    description='''Plugin to harvest Berlin's FIS Broker into the datenregister.berlin.de schema''',
+    description='''Plugin to harvest Berlin's FIS-Broker geo information system into the datenregister.berlin.de schema''',
     long_description=long_description,
 
     # The project's main homepage.
-    url='https://github.com/knudmoeller/ckanext-fisbroker',
+    url='https://github.com/berlinonline/ckanext-fisbroker',
 
     # Author details
     author='''Knud M\xc3\xb6ller''',
-    author_email='''knud@datalysator.com''',
+    author_email='''knud.moeller@berlinonline.de''',
 
     # Choose your license
     license='AGPL',
@@ -79,5 +79,9 @@ setup(
     entry_points='''
         [ckan.plugins]
         fisbroker=ckanext.fisbroker.plugin:FisbrokerPlugin
+        dummyharvest=ckanext.fisbroker.tests.test_controller:DummyHarvester
+        [paste.paster_command]
+        fisbroker=ckanext.fisbroker.paster_command:FISBrokerCommand
+
     ''',
 )

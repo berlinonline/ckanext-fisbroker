@@ -32,6 +32,7 @@ pip-delete-this-directory.txt
 
 # Unit test / coverage reports
 htmlcov/
+cover/
 .tox/
 .coverage
 .cache
@@ -43,3 +44,7 @@ docs/_build/
 
 # dev examples
 examples/
+
+# OS X
+.DS_Store
+.vscode
