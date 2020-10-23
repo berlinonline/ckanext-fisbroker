@@ -4,12 +4,14 @@
 
 ## 1.1.0
 
- _(2020-10-09)_
+_(2020-10-09)_
 
 - Add paster command `fisbroker`.
 - Add reimport functionality (fetch and import a set of datasets that have been previously harvested), with access through UI (button on dataset page) and paster command.
 
 ## 1.0.0
+
+_(2020-02-25)_
 
 - Add extensive unit tests.
 - Add changelog and version numbers.
