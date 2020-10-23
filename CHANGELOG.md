@@ -2,6 +2,12 @@
 
 ## Development
 
+## 1.1.1
+
+_(2020-10-23)_
+
+- Add documentation for -o/-l options for paster command.
+
 ## 1.1.0
 
 _(2020-10-09)_

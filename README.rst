@@ -55,9 +55,9 @@ You can get the documentation for the paster command as follows:
 .. code-block::
 
    (default) user:/usr/lib/ckan/default/src/ckan# paster --plugin=ckanext-fisbroker fisbroker
-   Usage: paster fisbroker [options] Actions for the FIS-Broker harvester
+   Usage: paster fisbroker [options] 
    
-       Usage:
+   Actions for the FIS-Broker harvester
    
          fisbroker list_sources
            - List all instances of the FIS-Broker harvester.
@@ -67,18 +67,19 @@ You can get the documentation for the paster command as follows:
              FIS-Broker harvester. Either of all instances or of the
              one specified by {source-id}.
    
-         fisbroker [-s|-d {source|dataset-id}] reimport_dataset
+         fisbroker [-s|-d {source|dataset-id}] [-o {offset}] [-l {limit}] reimport_dataset
            - Reimport the specified datasets. The specified datasets are either
              all datasets by all instances of the FIS-Broker harvester (if no options
              are used), or all datasets by the FIS-Broker harvester instance with
              {source-id}, or the single dataset identified by {dataset-id}.
+             To reimport only a subset or page through the complete set of datasets,
+             use the --offset,-o and --limit,-l options.
    
          fisbroker [-s {source-id}] last_successful_job
            - Show the last successful job that was not a reimport job, either
              of the harvester instance specified by {source-id}, or by
              all instances.
-       
-   Actions for the FIS-Broker harvester
+
 
 
 -------------------
