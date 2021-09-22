@@ -429,7 +429,7 @@ class FisbrokerPlugin(CSWHarvester):
                 LOG.debug("this is not a service resource, skipping dataset ...")
                 context['error'] = json.dumps({'code': 2, 'description': 'not a service resource'})
                 return 'skip'
-            LOG.debug("this is a not service resource, continuing ...")
+            LOG.debug("this is a service resource, continuing ...")
 
             extras = self.extras_dict(package_dict['extras'])
 
