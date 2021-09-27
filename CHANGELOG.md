@@ -2,6 +2,9 @@
 
 ## Development
 
+- Fix typos in log output.
+- Fix version in setup.py.
+
 ## 1.1.1
 
 _(2020-10-23)_
