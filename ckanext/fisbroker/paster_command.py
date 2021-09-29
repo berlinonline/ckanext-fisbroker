@@ -11,6 +11,7 @@ from ckanext.fisbroker import HARVESTER_ID
 import ckanext.fisbroker.controller as controller
 from ckanext.fisbroker.plugin import FisbrokerPlugin
 
+from ckanext.harvest.model import HarvestObject
 from ckanext.harvest.model import HarvestSource
 
 LOG = logging.getLogger(__name__)
@@ -38,8 +39,12 @@ class FISBrokerCommand(cli.CkanCommand):
 
       fisbroker [-s {source-id}] last_successful_job
         - Show the last successful job that was not a reimport job, either
-          of the harvester instance specified by {source-id}, or by
+          of the harvester instance specified by {source-id}, or of
           all instances.
+
+      fisbroker [-s {source-id}] harvest_objects
+        - Show all harvest objects with their CSW-guids and CKAN package ids, either
+          of the harvester instance specified by {source-id}, or of all instances.
     '''
 
     summary = __doc__.split('\n')[0]
@@ -107,6 +112,12 @@ class FISBrokerCommand(cli.CkanCommand):
         print '     jobs: %s' % source.get('status').get('job_count')
         print ''
 
+    def print_harvest_objects(self, harvest_objects):
+        '''Print all harvest objects.'''
+        print 'source_id,csw_guid,package_id'
+        for ho in harvest_objects:
+            print '{},{},{}'.format(ho['source_id'], ho['csw_guid'], ho['package_id'])
+
     def list_sources(self):
         '''List all instances of the FIS-Broker harvester.
         '''
@@ -165,6 +176,9 @@ class FISBrokerCommand(cli.CkanCommand):
         '''Implementation of the paster command
         '''
 
+        class MockHarvestJob:
+            pass
+
         self._load_config()
 
         if not self.args:
@@ -209,8 +223,6 @@ class FISBrokerCommand(cli.CkanCommand):
             end = time.time()
             LOG.debug("This took %f seconds", end - start)
         elif cmd == 'last_successful_job':
-            class MockHarvestJob:
-                pass
             sources = []
             if self.options.source_id:
                 LOG.debug("finding last successful job from a single source: %s ...",
@@ -225,5 +237,31 @@ class FISBrokerCommand(cli.CkanCommand):
                 harvest_job.id = 'fakeid'
                 last_successful_job = FisbrokerPlugin.last_error_free_job(harvest_job)
                 LOG.debug(last_successful_job)
+        elif cmd == 'harvest_objects':
+            sources = []
+            if self.options.source_id:
+                LOG.debug("finding all harvest objects from a single source: %s ...",
+                          self.options.source_id)
+                sources = [unicode(self.options.source_id)]
+            else:
+                LOG.debug("finding all harvest objects from all sources ...")
+                sources = [source.get('id') for source in self.list_sources()]
+            for source in sources:
+                harvest_job = MockHarvestJob()
+                harvest_job.source = HarvestSource.get(source)
+                harvest_job.id = 'fakeid'
+                query = model.Session.query(HarvestObject.guid, HarvestObject.package_id).\
+                    filter(HarvestObject.current == True).\
+                    filter(HarvestObject.harvest_source_id == harvest_job.source.id)
+                harvest_objects = []
+
+                for guid, package_id in query:
+                    harvest_objects.append({
+                        "source_id": source,
+                        "csw_guid": guid,
+                        "package_id": package_id
+                    })
+
+                self.print_harvest_objects(harvest_objects)
         else:
             print 'Command %s not recognized' % cmd
