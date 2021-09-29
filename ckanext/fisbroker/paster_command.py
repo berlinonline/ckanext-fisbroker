@@ -15,6 +15,7 @@ from ckanext.harvest.model import HarvestObject
 from ckanext.harvest.model import HarvestSource
 
 LOG = logging.getLogger(__name__)
+FISBROKER_SOURCE_NAME = u'harvest-fisbroker'
 
 class FISBrokerCommand(cli.CkanCommand):
     '''Actions for the FIS-Broker harvester
@@ -45,6 +46,10 @@ class FISBrokerCommand(cli.CkanCommand):
       fisbroker [-s {source-id}] harvest_objects
         - Show all harvest objects with their CSW-guids and CKAN package ids, either
           of the harvester instance specified by {source-id}, or of all instances.
+
+      fisbroker [-b {berlin_source}] list_datasets_berlin_source
+        - Show all datasets for which the 'berlin_source' extra is {berlin_source}
+          (default is 'harvest-fisbroker').
     '''
 
     summary = __doc__.split('\n')[0]
@@ -79,6 +84,12 @@ class FISBrokerCommand(cli.CkanCommand):
                                default=False,
                                type='int',
                                help='Index of the first dataset to reimport')
+
+        self.parser.add_option('-b',
+                               '--berlinsource',
+                               dest='berlin_source',
+                               default=FISBROKER_SOURCE_NAME,
+                               help='Value of the `berlin_source` extra to filter by')
 
     def print_dataset(self, dataset):
         '''Print an individual dataset.'''
@@ -263,5 +274,20 @@ class FISBrokerCommand(cli.CkanCommand):
                     })
 
                 self.print_harvest_objects(harvest_objects)
+        elif cmd == 'list_datasets_berlin_source':
+            LOG.debug("finding all packages with extra 'berlin_source' == '{}' ...".format(
+                self.options.berlin_source))
+            query = model.Session.query(model.Package).filter_by(
+                state=model.State.ACTIVE)
+            packages = [
+                {
+                    "name": pkg.name,
+                    "id": pkg.id,
+                    "extras": {key: value for key, value in pkg.extras.items()}
+                } for pkg in query ]
+            print 'package_name,package_id'
+            for package in packages:
+                if (package["extras"].get("berlin_source", "_undefined") == self.options.berlin_source):
+                    print "{},{}".format(package["name"], package["id"])
         else:
             print 'Command %s not recognized' % cmd
