@@ -2,6 +2,13 @@
 
 ## Development
 
+## 1.2.1
+
+_(2021-09-29)_
+
+- Add two additional sub-commands to the `fisbroker` command:
+  - `harvest_objects`: List all harvest objects from a FIS-Broker source with their CSW guids and CKAN ids.
+  - `list_datasets_berlin_source`: List all datasets which have a particular value for the extra `berlin_source` (e.g. all with `'berlin_source': 'harvest-fisbroker'`).
 - Fix typos in log output.
 - Fix version in setup.py.
 
@@ -9,7 +16,7 @@
 
 _(2020-10-23)_
 
-- Add documentation for -o/-l options for paster command.
+- Add documentation for `-o`/`-l` options for paster command.
 
 ## 1.1.0
 
