@@ -2,6 +2,8 @@
 
 ## Development
 
+- Switch from RST to Markdown for Readme.
+
 ## 1.2.1
 
 _(2021-09-29)_
