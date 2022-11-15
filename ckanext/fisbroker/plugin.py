@@ -102,7 +102,7 @@ def extract_license_and_attribution(data_dict):
                 license_and_attribution['license_id'] = structured['id']
                 license_and_attribution['attribution_text'] = structured['quelle']
             except ValueError:
-                LOG.info('could not parse as JSON: %s', restriction)
+                LOG.info(f"could not parse as JSON: {restriction}")
 
     # fix bad DL-DE-BY id, maybe remove eventually?
     if 'license_id' in license_and_attribution and license_and_attribution['license_id'] == "dl-de-by-2-0":
@@ -113,7 +113,7 @@ def extract_license_and_attribution(data_dict):
 
 
 def extract_reference_dates(data_dict):
-    '''Extract `date_released` and `date_updated` dataset metadata from
+    '''Extract `date_released` and `date_updated` dataset metadata from
        the CSW resource's ISO representation.'''
 
     reference_dates = {}
@@ -166,13 +166,11 @@ def extract_preview_markup(data_dict):
     preview_graphics = iso_values.get("browse-graphic", [])
     for preview_graphic in preview_graphics:
         preview_graphic_title = preview_graphic.get('description', None)
-        if preview_graphic_title == u"Vorschaugrafik":
-            preview_graphic_title = u"Vorschaugrafik zu Datensatz '{}'".format(
-                package_dict['title'])
+        if preview_graphic_title == "Vorschaugrafik":
+            preview_graphic_title = f"Vorschaugrafik zu Datensatz '{package_dict['title']}'"
             preview_graphic_path = preview_graphic.get('file', None)
             if preview_graphic_path:
-                preview_markup = u"![{}]({})".format(
-                    preview_graphic_title, preview_graphic_path)
+                preview_markup = f"![{preview_graphic_title}]({preview_graphic_path})"
                 return preview_markup
 
     return None
@@ -192,7 +190,7 @@ def generate_title(data_dict):
         main_resource = main_resources.pop()
         resource_format = main_resource.get('format', None)
         if resource_format is not None:
-            title = u"{0} - [{1}]".format(title, resource_format)
+            title = f"{title} - [{resource_format}]"
 
     return title
 
@@ -211,7 +209,7 @@ def generate_name(data_dict):
 
     guid = iso_values['guid']
     guid_part = guid.split('-')[0]
-    name = "{0}-{1}".format(name, guid_part)
+    name = f"{name}-{guid_part}"
     return name
 
 def extras_as_list(extras_dict):
@@ -273,7 +271,7 @@ class FisbrokerPlugin(CSWHarvester):
            FIS-Broker.'''
         date = self.get_import_since_date(harvest_job)
         if date:
-            LOG.info("date constraint: %s", date)
+            LOG.info(f"date constraint: {date}")
             date_query = PropertyIsGreaterThanOrEqualTo('modified', date)
             return [date_query]
         else:
@@ -323,8 +321,7 @@ class FisbrokerPlugin(CSWHarvester):
                     if import_since not in self.import_since_keywords:
                         datetime.strptime(import_since, "%Y-%m-%d")
                 except ValueError:
-                    raise ValueError('\'import_since\' is not a valid date: \'%s\'. Use ISO8601: YYYY-MM-DD or one of %s.' % (
-                        import_since, self.import_since_keywords))
+                    raise ValueError(f"'import_since' is not a valid date: '{import_since}'. Use ISO8601: YYYY-MM-DD or one of {', '.join(self.import_since_keywords)}.")
 
             if 'timeout' in config_obj:
                 timeout = config_obj['timeout']
@@ -332,7 +329,7 @@ class FisbrokerPlugin(CSWHarvester):
                     config_obj['timeout'] = int(timeout)
                 except ValueError:
                     raise ValueError(
-                        '\'timeout\' is not valid: \'%s\'. Please use whole numbers to indicate seconds until timeout.' % timeout)
+                        f"\'timeout\' is not valid: '{timeout}'. Please use whole numbers to indicate seconds until timeout.")
 
             if 'timedelta' in config_obj:
                 _timedelta = config_obj['timedelta']
@@ -340,7 +337,7 @@ class FisbrokerPlugin(CSWHarvester):
                     config_obj['timedelta'] = int(_timedelta)
                 except ValueError:
                     raise ValueError(
-                        '\'timedelta\' is not valid: \'%s\'. Please use whole numbers to indicate timedelta between UTC and harvest source timezone.' % _timedelta)
+                        f"'\'timedelta\' is not valid: '{_timedelta}'. Please use whole numbers to indicate timedelta between UTC and harvest source timezone.")
 
             config = json.dumps(config_obj, indent=2)
 

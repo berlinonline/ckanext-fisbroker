@@ -27,9 +27,8 @@ class FISBrokerResourceAnnotator:
         '''Build the query string for a GetCapabilities query to either a WMS or WFS service.
            Return None if `service` is not one of [ 'wms', 'wfs' ].'''
         if service not in VALID_SERVICE_TYPES:
-            raise ValueError("Service must be one of [ {} ], is '{}'.".format(
-                ', '.join(VALID_SERVICE_TYPES), service))
-        return "service={}&request=GetCapabilities&version={}".format(service, FISBrokerResourceAnnotator.service_version(service))
+            raise ValueError(f"Service must be one of [ {', '.join(VALID_SERVICE_TYPES)} ], is '{service}'.")
+        return f"service={service}&request=GetCapabilities&version={FISBrokerResourceAnnotator.service_version(service)}"
 
     @staticmethod
     def service_version(service):
@@ -39,8 +38,7 @@ class FISBrokerResourceAnnotator:
             return "1.3.0"
         elif service == "wfs":
             return "2.0.0"
-        raise ValueError("Service must be one of [ {} ].".format(
-            ', '.join(VALID_SERVICE_TYPES)))
+        raise ValueError(f"Service must be one of [ {', '.join(VALID_SERVICE_TYPES)} ].")
 
     def annotate_service_resource(self, resource):
         '''Convert wfs and wms service resources.'''
@@ -50,26 +48,25 @@ class FISBrokerResourceAnnotator:
         elif "/wms/" in resource['url']:
             service_type = FORMAT_WMS
         else:
-            raise ValueError("Resource type must be one of [ {} ].".format(
-                ', '.join(VALID_SERVICE_TYPES)))
+            raise ValueError(f"Resource type must be one of [ {', '.join(VALID_SERVICE_TYPES)} ].")
 
-        resource['name'] = "Unspezifizierter {}-Service".format(service_type)
-        resource['description'] = "Unspezifizierter {}-Service".format(service_type)
+        resource['name'] = f"Unspezifizierter {service_type}-Service"
+        resource['description'] = f"Unspezifizierter {service_type}-Service"
 
         parsed = urlparse(resource['url'])
         query = parse_qs(parsed.query)
         if not query:
             # this is the service endpoint
-            resource['name'] = "API-Endpunkt des {}-Service".format(service_type)
-            resource['description'] = "API-Endpunkt des {}-Service. Weitere Informationen unter https://www.ogc.org/standards/{}".format(service_type, service_type.lower())
+            resource['name'] = f"API-Endpunkt des {service_type}-Service"
+            resource['description'] = f"API-Endpunkt des {service_type}-Service. Weitere Informationen unter https://www.ogc.org/standards/{service_type.lower()}"
             resource['internal_function'] = FUNCTION_API_ENDPOINT
             resource['weight'] = 15
         else:
             method = query.get('request')
             if method:
                 if method.pop().lower() == "getcapabilities":
-                    resource['name'] = "Endpunkt-Beschreibung des {}-Service".format(service_type)
-                    resource['description'] = "Maschinenlesbare Endpunkt-Beschreibung des {}-Service. Weitere Informationen unter https://www.ogc.org/standards/{}".format(service_type, service_type.lower())
+                    resource['name'] = f"Endpunkt-Beschreibung des {service_type}-Service"
+                    resource['description'] = f"Maschinenlesbare Endpunkt-Beschreibung des {service_type}-Service. Weitere Informationen unter https://www.ogc.org/standards/{service_type.lower()}"
                     resource['main'] = True
                     resource['internal_function'] = FUNCTION_API_DESCRIPTION
                     resource['weight'] = 10
@@ -140,8 +137,7 @@ class FISBrokerResourceAnnotator:
         if 'api_endpoint' in res_dict and 'api_description' not in res_dict:
             res_format = res_dict['api_endpoint']['format']
             if res_format != FORMAT_ATOM:
-                url = '{}?{}'.format(res_dict['api_endpoint']['url'],
-                                     FISBrokerResourceAnnotator.getcapabilities_query(res_format.lower()))
+                url = f"{res_dict['api_endpoint']['url']}?{FISBrokerResourceAnnotator.getcapabilities_query(res_format.lower())}"
                 url = normalize_url(url)
                 resource = {
                     'url': url

@@ -34,7 +34,7 @@ FISBROKER_HARVESTER_CONFIG = {
     'title': 'FIS-Broker Harvest Source' ,
     'name': 'fis-broker-harvest-source' ,
     'source_type': HARVESTER_ID ,
-    'url' : "http://127.0.0.1:{}/csw".format(MOCK_PORT)
+    'url': f"http://127.0.0.1:{MOCK_PORT}/csw"
 }
 
 
@@ -49,16 +49,16 @@ def _assert_equal(actual, expected):
     """Wrapper for `assert expected == actual` that also logs the
        values for expected and actual."""
 
-    LOG.debug("expected: %s", expected)
-    LOG.debug("actual:   %s", actual)
+    LOG.debug(f"expected: {expected}")
+    LOG.debug(f"actual:   {actual}")
     assert expected == actual
 
 def _assert_not_equal(actual, not_expected):
     """Wrapper for `assert expected != actual` that also logs the
        values for expected and actual."""
 
-    LOG.debug("not_expected: %s", not_expected)
-    LOG.debug("actual:   %s", actual)
+    LOG.debug(f"not_expected: {not_expected}")
+    LOG.debug(f"actual:   {actual}")
     assert not_expected != actual
 
 class FisbrokerTestBase(helpers.FunctionalTestBase):

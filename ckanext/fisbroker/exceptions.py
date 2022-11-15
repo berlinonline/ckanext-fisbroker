@@ -24,7 +24,7 @@ ERROR_MESSAGES = {
     ERROR_MISSING_ID: "Missing parameter 'id'.",
     ERROR_NOT_FOUND_IN_CKAN: "Package id '{}' does not exist. Cannot reimport package.",
     ERROR_NOT_HARVESTED: "Package could not be re-imported because it was not created by a harvester.",
-    ERROR_NOT_HARVESTED_BY_FISBROKER: "Package could not be re-imported because it was not harvested by harvester '{}'.".format(HARVESTER_ID),
+    ERROR_NOT_HARVESTED_BY_FISBROKER: f"Package could not be re-imported because it was not harvested by harvester '{HARVESTER_ID}'.",
     ERROR_NO_GUID: "Package could not be re-imported because FIS-Broker GUID could not be determined.",
     ERROR_NO_CONNECTION: "Failed to establish connection to FIS-Broker service at {} ({}).",
     ERROR_NO_CONNECTION_PACKAGE: "Failed to establish connection to FIS-Broker service at {} ({}) while reimporting package '{}'.",

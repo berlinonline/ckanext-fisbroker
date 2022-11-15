@@ -2,6 +2,8 @@
 
 ## Development
 
+- Convert to Python 3.
+- This is the first version that requires Python 3 / CKAN >= 2.9.
 - Switch from RST to Markdown for Readme.
 
 ## 1.2.1

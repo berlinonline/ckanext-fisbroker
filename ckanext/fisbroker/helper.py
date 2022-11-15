@@ -23,7 +23,7 @@ def normalize_url(url):
 
     normalized_query = []
     for parameter in sorted(query):
-        normalized_query.append("{}={}".format(parameter, query[parameter][0].lower()))
+        normalized_query.append(f"{parameter}={query[parameter][0].lower()}")
 
     return urlunparse(parsed._replace(query="&".join(normalized_query)))
 

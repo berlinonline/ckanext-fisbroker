@@ -64,7 +64,7 @@ def get_error_dict(error_code):
             "message": ERROR_MESSAGES[error_code] ,
             "code": error_code
         }
-    raise ValueError("No error code {} exists, must be one of {}".format(error_code, ERROR_MESSAGES.keys()))
+    raise ValueError(f"No error code {error_code} exists, must be one of {ERROR_MESSAGES.keys()}")
 
 class FISBrokerController(base.BaseController):
     """

@@ -93,41 +93,40 @@ class FISBrokerCommand(cli.CkanCommand):
 
     def print_dataset(self, dataset):
         '''Print an individual dataset.'''
-        print u'{},{},"{}"'.format(dataset.get('id'), dataset.get('name'),dataset.get('title')).encode('utf-8')
+        print(f"{dataset.get('id')},{dataset.get('name')},\"{dataset.get('title')}\"")
 
     def print_datasets(self, datasets):
         '''Print all datasets.'''
-        print 'id,name,title'
+        print('id,name,title')
         for dataset in datasets:
             self.print_dataset(dataset)
 
     def print_harvest_sources(self, sources):
         '''Print all harvest sources (taken from ckanext-harvest).'''
         if sources:
-            print ''
+            print()
         for source in sources:
             self.print_harvest_source(source)
 
     def print_harvest_source(self, source):
         '''Print an individual harvest source (taken from ckanext-harvest).'''
-        print 'Source id: %s' % source.get('id')
+        print(f"Source id: {source.get('id')}")
         if 'name' in source:
             # 'name' is only there if the source comes from the Package
-            print '     name: %s' % source.get('name')
-        print '      url: %s' % source.get('url')
+            print(f"     name: {source.get('name')}")
+        print(f"      url: {source.get('url')}")
         # 'type' if source comes from HarvestSource, 'source_type' if it comes
         # from the Package
-        print '   active: %s' % (source.get('active',
-                                            source.get('state') == 'active'))
-        print 'frequency: %s' % source.get('frequency')
-        print '     jobs: %s' % source.get('status').get('job_count')
-        print ''
+        print(f"   active: {source.get('active', source.get('state') == 'active')}")
+        print(f"frequency: {source.get('frequency')}")
+        print(f"     jobs: {source.get('status').get('job_count')}")
+        print()
 
     def print_harvest_objects(self, harvest_objects):
         '''Print all harvest objects.'''
-        print 'source_id,csw_guid,package_id'
+        print('source_id,csw_guid,package_id')
         for ho in harvest_objects:
-            print '{},{},{}'.format(ho['source_id'], ho['csw_guid'], ho['package_id'])
+            print(f"{ho['source_id']},{ho['csw_guid']},{ho['package_id']}")
 
     def list_sources(self):
         '''List all instances of the FIS-Broker harvester.
@@ -144,9 +143,9 @@ class FISBrokerCommand(cli.CkanCommand):
         one specified by {source-id}.
         '''
 
-        LOG.debug("listing datasets for source %s ...", source_id)
+        LOG.debug(f"listing datasets for source {source_id} ...")
 
-        filter_query = 'harvest_source_id:"{0}"'.format(source_id)
+        filter_query = f'harvest_source_id: "{source_id}"'
         search_dict = {
             'fq': filter_query,
             'start': 0,
@@ -205,25 +204,25 @@ class FISBrokerCommand(cli.CkanCommand):
             LOG.debug("listing datasets harvested by FisbrokerPlugin ...")
             sources = [source.get('id') for source in self.list_sources()]
             if len(self.args) >= 2:
-                sources = [unicode(self.args[1])]
+                sources = [str(self.args[1])]
             for source in sources:
                 start = time.time()
                 packages = self.list_packages(source)
                 self.print_datasets(packages)
-                LOG.debug("there were %i results ...", len(packages))
+                LOG.debug(f"there were {len(packages)} results ...")
                 end = time.time()
-                LOG.debug("This took %f seconds", end - start)
+                LOG.debug(f"This took {end - start} seconds")
         elif cmd == 'reimport_dataset':
             LOG.debug("reimporting datasets ...")
             package_ids = []
             if self.options.dataset_id:
                 LOG.debug("reimporting a single dataset ...")
-                package_ids = [ unicode(self.options.dataset_id) ]
+                package_ids = [ str(self.options.dataset_id) ]
             else:
                 sources = []
                 if self.options.source_id:
-                    LOG.debug("reimporting all dataset from a single source: %s ...", self.options.source_id)
-                    sources = [ unicode(self.options.source_id) ]
+                    LOG.debug(f"reimporting all dataset from a single source: {self.options.source_id} ...")
+                    sources = [ str(self.options.source_id) ]
                 else:
                     LOG.debug("reimporting all dataset from all sources ...")
                     sources = [ source.get('id') for source in self.list_sources() ]
@@ -232,13 +231,12 @@ class FISBrokerCommand(cli.CkanCommand):
             start = time.time()
             self.reimport_dataset(package_ids)
             end = time.time()
-            LOG.debug("This took %f seconds", end - start)
+            LOG.debug(f"This took {end - start} seconds")
         elif cmd == 'last_successful_job':
             sources = []
             if self.options.source_id:
-                LOG.debug("finding last successful job from a single source: %s ...",
-                            self.options.source_id)
-                sources = [unicode(self.options.source_id)]
+                LOG.debug(f"finding last successful job from a single source: {self.options.source_id} ...")
+                sources = [str(self.options.source_id)]
             else:
                 LOG.debug("finding last successful job from all sources ...")
                 sources = [source.get('id') for source in self.list_sources()]
@@ -251,9 +249,8 @@ class FISBrokerCommand(cli.CkanCommand):
         elif cmd == 'harvest_objects':
             sources = []
             if self.options.source_id:
-                LOG.debug("finding all harvest objects from a single source: %s ...",
-                          self.options.source_id)
-                sources = [unicode(self.options.source_id)]
+                LOG.debug(f"finding all harvest objects from a single source: {self.options.source_id} ...")
+                sources = [str(self.options.source_id)]
             else:
                 LOG.debug("finding all harvest objects from all sources ...")
                 sources = [source.get('id') for source in self.list_sources()]
@@ -275,8 +272,7 @@ class FISBrokerCommand(cli.CkanCommand):
 
                 self.print_harvest_objects(harvest_objects)
         elif cmd == 'list_datasets_berlin_source':
-            LOG.debug("finding all packages with extra 'berlin_source' == '{}' ...".format(
-                self.options.berlin_source))
+            LOG.debug(f"finding all packages with extra 'berlin_source' == '{self.options.berlin_source}' ...")
             query = model.Session.query(model.Package).filter_by(
                 state=model.State.ACTIVE)
             packages = [
@@ -285,9 +281,9 @@ class FISBrokerCommand(cli.CkanCommand):
                     "id": pkg.id,
                     "extras": {key: value for key, value in pkg.extras.items()}
                 } for pkg in query ]
-            print 'package_name,package_id'
+            print('package_name,package_id')
             for package in packages:
                 if (package["extras"].get("berlin_source", "_undefined") == self.options.berlin_source):
-                    print "{},{}".format(package["name"], package["id"])
+                    print(f"{package['name']},{package['id']}")
         else:
-            print 'Command %s not recognized' % cmd
+            print(f'Command {cmd} not recognized')

@@ -247,13 +247,11 @@ class TestTransformationHelpers(FisbrokerTestBase):
            without a release date.'''
 
         data_dict = self._csw_resource_data_dict('wfs-no-release-date.xml')
-        # LOG.info("iso_valalala: %s", data_dict['iso_values'])
-        # assert False
         _assert_equal(FisbrokerPlugin().get_package_dict(self.context, data_dict), 'skip')
 
     def test_revision_interpreted_as_updated_creation_as_released(self):
         '''Test if a reference date of type `revision` is interpreted as
-           `date_updated` and a date of type `creation` as `date_released`.
+           `date_updated` and a date of type `creation` as `date_released`.
            `publication` should be ignored if `creation` was already present.'''
 
         creation = '1974-06-07'
@@ -671,7 +669,7 @@ class TestPlugin(FisbrokerTestBase):
         # do a reimport job
         package_id = "3d-gebaudemodelle-im-level-of-detail-2-lod-2-wms-f2a8a483"
         self._get_test_app().get(
-            url="/api/harvest/reimport?id={}".format(package_id),
+            url=f"/api/harvest/reimport?id={package_id}",
             headers={'Accept': 'application/json'},
             extra_environ={'REMOTE_USER': self.context['user'].encode('ascii')}
         )
