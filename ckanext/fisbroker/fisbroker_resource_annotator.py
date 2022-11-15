@@ -3,7 +3,7 @@
 
 
 import logging
-from urlparse import urlparse, parse_qs
+from urllib.parse import urlparse, parse_qs
 from ckanext.fisbroker.helper import normalize_url
 
 LOG = logging.getLogger(__name__)

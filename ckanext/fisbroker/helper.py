@@ -2,7 +2,7 @@
 """A collection of helper methods for the CKAN FIS-Broker harvester."""
 
 import logging
-from urlparse import urlparse, urlunparse, parse_qs
+from urllib.parse import urlparse, urlunparse, parse_qs
 
 from ckan import model
 from ckan.model.package import Package
