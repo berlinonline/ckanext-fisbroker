@@ -1,2 +1,0 @@
--e 'git+https://github.com/ckan/ckanext-harvest.git@0918a9a3415#egg=ckanext-harvest'
--e 'git+https://github.com/berlinonline/ckanext-spatial.git@feature/delete_skipped_imports#egg=ckanext-spatial'
