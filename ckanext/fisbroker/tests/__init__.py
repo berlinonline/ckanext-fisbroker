@@ -2,9 +2,9 @@
 
 from dateutil.parser import parse
 import logging
+import pytest
 import warnings
 
-from lxml import etree
 from sqlalchemy import exc as sa_exc
 
 from ckan.lib.base import config
@@ -45,43 +45,31 @@ start_mock_server(MOCK_PORT)
 
 warnings.filterwarnings("ignore", category=sa_exc.SAWarning)
 
-def _assert_equal(actual, expected):
-    """Wrapper for `assert expected == actual` that also logs the
-       values for expected and actual."""
+@pytest.fixture
+def base_context():
+    '''
+    Fixture that provides some basic initialisation.
+    '''
+    reset_mock_server()
+    # Add sysadmin user
+    user_name = u'harvest'
+    harvest_user = model.User(name=user_name, password=u'test', sysadmin=True)
+    Session.add(harvest_user)
+    Session.commit()
+    package_schema = default_update_package_schema()
+    context = {
+        'model': model,
+        'session': Session,
+        'user': user_name,
+        'schema': package_schema,
+        'api_version': '2'
+    }
+    
+    return context
 
-    LOG.debug(f"expected: {expected}")
-    LOG.debug(f"actual:   {actual}")
-    assert expected == actual
 
-def _assert_not_equal(actual, not_expected):
-    """Wrapper for `assert expected != actual` that also logs the
-       values for expected and actual."""
 
-    LOG.debug(f"not_expected: {not_expected}")
-    LOG.debug(f"actual:   {actual}")
-    assert not_expected != actual
-
-class FisbrokerTestBase(helpers.FunctionalTestBase):
-
-    def setup(self):
-        super(FisbrokerTestBase, self).setup()
-        reset_mock_server()
-        # Add sysadmin user
-        user_name = u'harvest'
-        harvest_user = model.User(name=user_name, password=u'test', sysadmin=True)
-        Session.add(harvest_user)
-        Session.commit()
-        package_schema = default_update_package_schema()
-        self.context = {
-            'model': model,
-            'session': Session,
-            'user': user_name,
-            'schema': package_schema,
-            'api_version': '2'
-        }
-
-    def teardown(self):
-        model.repo.rebuild_db()
+class FisbrokerTestBase(object):
 
     def _create_source(self, source_fixture=FISBROKER_HARVESTER_CONFIG):
         context = {
@@ -125,7 +113,7 @@ class FisbrokerTestBase(helpers.FunctionalTestBase):
         # content with a known object_id and create the harvest object:
         url = harvest_job.source.url
         # _get_content() returns XML
-        content = harvester._get_content(url)
+        content = harvester._get_content_as_unicode(url)
         obj = HarvestObject(guid=object_id,
                             job=harvest_job,
                             content=content,

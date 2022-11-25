@@ -131,7 +131,7 @@ class FISBrokerResourceAnnotator:
 
         resources = [self.annotate_resource(resource)
                      for resource in resources]
-        resources = filter(None, resources)
+        resources = list(filter(None, resources))
 
         res_dict = { resource['internal_function']: resource for resource in resources }
         if 'api_endpoint' in res_dict and 'api_description' not in res_dict:

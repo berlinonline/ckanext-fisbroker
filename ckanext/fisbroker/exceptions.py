@@ -34,7 +34,7 @@ ERROR_MESSAGES = {
 }
 
 class NoFBHarvesterDefined(Exception):
-    '''Exception for triggering reimport on a package id that doesn't exist.'''
+    '''Exception for triggering reimport when the FIS-Broker harvester is not loaded.'''
 
     def __init__(self, msg="No FIS-Broker harvester found, cannot reimport."):
         super(NoFBHarvesterDefined, self).__init__(msg)

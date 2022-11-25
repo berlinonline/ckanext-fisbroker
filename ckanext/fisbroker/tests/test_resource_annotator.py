@@ -2,7 +2,7 @@
 '''Tests for the FISBrokerAnnotator class.'''
 
 import logging
-from nose.tools import assert_raises
+import pytest
 from ckanext.fisbroker.fisbroker_resource_annotator import (
     FISBrokerResourceAnnotator,
     FORMAT_WFS,
@@ -16,7 +16,6 @@ from ckanext.fisbroker.fisbroker_resource_annotator import (
     FUNCTION_DOCUMENTATION,
 )
 from ckanext.fisbroker.helper import normalize_url
-from ckanext.fisbroker.tests import _assert_equal
 
 LOG = logging.getLogger(__name__)
 
@@ -27,12 +26,12 @@ class TestResourceAnnotator(object):
     def test_only_wms_and_wfs_allowed(self):
         '''Some methods only allow 'wms' or 'wfs' as the service parameter.
            Other values should raise an exception.'''
-        with assert_raises(ValueError):
+        with pytest.raises(ValueError) as e:
             FISBrokerResourceAnnotator.service_version('atom')
-        with assert_raises(ValueError):
+        with pytest.raises(ValueError) as e:
             FISBrokerResourceAnnotator.getcapabilities_query('atom')
 
-        with assert_raises(ValueError):
+        with pytest.raises(ValueError) as e:
             annotator = FISBrokerResourceAnnotator()
             url = 'https://fbinter.stadt-berlin.de/fb/feed/senstadt/a_SU_LOR'
             annotator.annotate_service_resource({'url': url})
@@ -46,38 +45,29 @@ class TestResourceAnnotator(object):
         resource = {'url': url}
         annotator = FISBrokerResourceAnnotator()
         converted_resource = annotator.annotate_resource(resource)
-        _assert_equal(converted_resource['url'], url)
-        _assert_equal(converted_resource['format'], FORMAT_WFS)
-        _assert_equal(converted_resource['internal_function'], FUNCTION_API_ENDPOINT)
+        assert converted_resource['url'] == url
+        assert converted_resource['format'] == FORMAT_WFS
+        assert converted_resource['internal_function'] == FUNCTION_API_ENDPOINT
         assert not converted_resource['main']
 
-    def test_annotate_getcapabilities_url(self):
+    @pytest.mark.parametrize("service", [
+            {'url': 'https://fbinter.stadt-berlin.de/fb/wfs/data/senstadt/s_boden_wfs1_2015?request=getcapabilities&service=wfs&version=2.0.0', 'format': FORMAT_WFS},
+            {'url': 'https://fbinter.stadt-berlin.de/fb/wfs/data/senstadt/s_boden_wfs1_2015?request=GetCapabilities&service=wfs&version=2.0.0', 'format': FORMAT_WFS},
+            {'url': 'https://fbinter.stadt-berlin.de/fb/wms/senstadt/wmsk_02_14_04gwtemp_60m?request=getcapabilities&service=wms&version=1.3.0', 'format': FORMAT_WMS}
+    ])
+    def test_annotate_getcapabilities_url(self, service):
         """An incoming FIS-Broker service resource with URL parameters containing
            'request=GetCapabilities' should be annotated correctly. That means the URL
            should be unchanged, the internal function should be set etc.
            Case of 'getcapabilities' should not matter.
            Test both WFS and WMS."""
 
-        wfs_urls = [
-            'https://fbinter.stadt-berlin.de/fb/wfs/data/senstadt/s_boden_wfs1_2015?request=getcapabilities&service=wfs&version=2.0.0',
-            'https://fbinter.stadt-berlin.de/fb/wfs/data/senstadt/s_boden_wfs1_2015?request=GetCapabilities&service=wfs&version=2.0.0',
-        ]
-        for url in wfs_urls:
-            resource = {'url': url}
-            annotator = FISBrokerResourceAnnotator()
-            converted_resource = annotator.annotate_resource(resource)
-            _assert_equal(converted_resource['url'], url)
-            _assert_equal(converted_resource['format'], FORMAT_WFS)
-            _assert_equal(converted_resource['internal_function'], FUNCTION_API_DESCRIPTION)
-            assert converted_resource['main']
-
-        url = 'https://fbinter.stadt-berlin.de/fb/wms/senstadt/wmsk_02_14_04gwtemp_60m?request=getcapabilities&service=wms&version=1.3.0'
-        resource = {'url': url}
+        resource = {'url': service['url']}
         annotator = FISBrokerResourceAnnotator()
         converted_resource = annotator.annotate_resource(resource)
-        _assert_equal(converted_resource['url'], url)
-        _assert_equal(converted_resource['format'], FORMAT_WMS)
-        _assert_equal(converted_resource['internal_function'], FUNCTION_API_DESCRIPTION)
+        assert converted_resource['url'] == service['url']
+        assert converted_resource['format'] == service['format']
+        assert converted_resource['internal_function'] == FUNCTION_API_DESCRIPTION
         assert converted_resource['main']
 
     def test_annotate_atom_feed(self):
@@ -87,31 +77,30 @@ class TestResourceAnnotator(object):
         annotator = FISBrokerResourceAnnotator()
         converted_resource = annotator.annotate_resource(resource)
 
-        _assert_equal(converted_resource['url'], url)
-        _assert_equal(converted_resource['name'], "Atom Feed")
-        _assert_equal(converted_resource['description'], "Atom Feed")
-        _assert_equal(converted_resource['format'], FORMAT_ATOM)
-        _assert_equal(converted_resource['internal_function'], FUNCTION_API_ENDPOINT)
+        assert converted_resource['url'] ==  url
+        assert converted_resource['name'] ==  "Atom Feed"
+        assert converted_resource['description'] ==  "Atom Feed"
+        assert converted_resource['format'] ==  FORMAT_ATOM
+        assert converted_resource['internal_function'] ==  FUNCTION_API_ENDPOINT
         assert converted_resource['main']
 
-    def test_annotate_service_page(self):
-        service_urls = [
+    @pytest.mark.parametrize("url", [
             "http://fbinter.stadt-berlin.de/fb?loginkey=showMap&mapId=nsg_lsg@senstadt",
             "http://fbinter.stadt-berlin.de/fb/index.jsp?loginkey=showMap&mapId=nsg_lsg@senstadt",
             "https://fbinter.stadt-berlin.de/fb?loginkey=showMap&mapId=nsg_lsg@senstadt",
             "https://fbinter.stadt-berlin.de/fb/index.jsp?loginkey=showMap&mapId=nsg_lsg@senstadt",
-        ]
+    ])
+    def test_annotate_service_page(self, url):
 
-        for url in service_urls:
-            resource = {'url': url}
-            annotator = FISBrokerResourceAnnotator()
-            converted_resource = annotator.annotate_resource(resource)
+        resource = {'url': url}
+        annotator = FISBrokerResourceAnnotator()
+        converted_resource = annotator.annotate_resource(resource)
 
-            _assert_equal(converted_resource['url'], url)
-            _assert_equal(converted_resource['name'], "Serviceseite im FIS-Broker")
-            _assert_equal(converted_resource['format'], FORMAT_HTML)
-            _assert_equal(converted_resource['internal_function'], FUNCTION_WEB_INTERFACE)
-            assert not converted_resource['main']
+        assert converted_resource['url'] == url
+        assert converted_resource['name'] == "Serviceseite im FIS-Broker"
+        assert converted_resource['format'] == FORMAT_HTML
+        assert converted_resource['internal_function'] == FUNCTION_WEB_INTERFACE
+        assert not converted_resource['main']
 
     def test_annotate_arbitrary_url_with_description(self):
         url = 'https://fbinter.stadt-berlin.de/fb_daten/beschreibung/umweltatlas/datenformatbeschreibung/Datenformatbeschreibung_kriterien_zur_bewertung_der_bodenfunktionen2015.pdf'
@@ -126,11 +115,11 @@ class TestResourceAnnotator(object):
         annotator = FISBrokerResourceAnnotator()
         converted_resource = annotator.annotate_resource(resource)
 
-        _assert_equal(converted_resource['name'], description)
-        _assert_equal(converted_resource['description'], description)
-        _assert_equal(converted_resource['format'], FORMAT_PDF)
-        _assert_equal(converted_resource['internal_function'], FUNCTION_DOCUMENTATION)
-        _assert_equal(converted_resource['url'], url)
+        assert converted_resource['name'] == description
+        assert converted_resource['description'] == description
+        assert converted_resource['format'] == FORMAT_PDF
+        assert converted_resource['internal_function'] == FUNCTION_DOCUMENTATION
+        assert converted_resource['url'] == url
         assert not converted_resource['main']
 
     def test_arbitrary_url_without_description_is_ignored(self):
@@ -144,7 +133,7 @@ class TestResourceAnnotator(object):
         annotator = FISBrokerResourceAnnotator()
         converted_resource = annotator.annotate_resource(resource)
 
-        _assert_equal(converted_resource, None)
+        assert converted_resource == None
 
     def test_sort_resources_by_weight(self):
         '''A list of resource dicts should be returned ordered in ascending
@@ -175,91 +164,109 @@ class TestResourceAnnotator(object):
 
         annotator = FISBrokerResourceAnnotator()
         sorted_weights = [resource['weight'] for resource in annotator.sort_resources(resources)]
-        _assert_equal([5, 10, 15, 20, 25], sorted_weights)
+        assert [5, 10, 15, 20, 25] == sorted_weights
 
-    def test_ensure_endpoint_description_is_present(self):
+    @pytest.mark.parametrize('data', [
+        {
+            'resources': [
+                {
+                    'url': 'https://fbinter.stadt-berlin.de/fb?loginkey=showMap&mapId=nsg_lsg@senstadt'
+                },
+                {
+                    'url': 'https://fbinter.stadt-berlin.de/fb/wfs/data/senstadt/s_boden_wfs1_2015'
+                },
+                {
+                    'url': 'https://fbinter.stadt-berlin.de/fb_daten/beschreibung/umweltatlas/datenformatbeschreibung/Datenformatbeschreibung_kriterien_zur_bewertung_der_bodenfunktionen2015.pdf',
+                    'description': 'Technische Beschreibung'
+                }
+            ],
+            'expected': [
+                {
+                    'name': 'Endpunkt-Beschreibung des WFS-Service',
+                    'weight': 10,
+                    'format': FORMAT_WFS,
+                    'url': normalize_url('https://fbinter.stadt-berlin.de/fb/wfs/data/senstadt/s_boden_wfs1_2015?request=getcapabilities&service=wfs&version=2.0.0'),
+                    'internal_function': FUNCTION_API_DESCRIPTION,
+                    'main': True,
+                    'description': 'Maschinenlesbare Endpunkt-Beschreibung des WFS-Service. Weitere Informationen unter https://www.ogc.org/standards/wfs'
+                },
+                {
+                    'name': 'API-Endpunkt des WFS-Service',
+                    'weight': 15,
+                    'format': FORMAT_WFS,
+                    'url': 'https://fbinter.stadt-berlin.de/fb/wfs/data/senstadt/s_boden_wfs1_2015',
+                    'internal_function': FUNCTION_API_ENDPOINT,
+                    'main': False,
+                    'description': 'API-Endpunkt des WFS-Service. Weitere Informationen unter https://www.ogc.org/standards/wfs'
+                },
+                {
+                    'name': 'Serviceseite im FIS-Broker',
+                    'weight': 20,
+                    'format': FORMAT_HTML,
+                    'url': 'https://fbinter.stadt-berlin.de/fb?loginkey=showMap&mapId=nsg_lsg@senstadt', 'internal_function': 'web_interface',
+                    'main': False,
+                },
+                {
+                    'description': 'Technische Beschreibung',
+                    'weight': 30,
+                    'url': 'https://fbinter.stadt-berlin.de/fb_daten/beschreibung/umweltatlas/datenformatbeschreibung/Datenformatbeschreibung_kriterien_zur_bewertung_der_bodenfunktionen2015.pdf',
+                    'internal_function': 'documentation',
+                    'main': False,
+                    'name': 'Technische Beschreibung'
+                }
+            ]
+        },
+        {
+            'resources': [
+                {
+                    'url': 'https://fbinter.stadt-berlin.de/fb/wms/senstadt/wmsk_02_14_04gwtemp_60m'
+                }
+            ],
+            'expected': [
+                {
+                    'name': 'Endpunkt-Beschreibung des WMS-Service',
+                    'weight': 10,
+                    'format': FORMAT_WMS,
+                    'url': normalize_url('https://fbinter.stadt-berlin.de/fb/wms/senstadt/wmsk_02_14_04gwtemp_60m?request=getcapabilities&service=wms&version=1.3.0'),
+                    'internal_function': FUNCTION_API_DESCRIPTION,
+                    'main': True,
+                    'description': 'Maschinenlesbare Endpunkt-Beschreibung des WMS-Service. Weitere Informationen unter https://www.ogc.org/standards/wms'
+                },
+                {
+                    'url': 'https://fbinter.stadt-berlin.de/fb/wms/senstadt/wmsk_02_14_04gwtemp_60m',
+                    'name': 'API-Endpunkt des WMS-Service',
+                    'weight': 15,
+                    'format': FORMAT_WMS,
+                    'internal_function': FUNCTION_API_ENDPOINT,
+                    'main': False,
+                    'description': 'API-Endpunkt des WMS-Service. Weitere Informationen unter https://www.ogc.org/standards/wms'
+                },
+            ]
+        }
+    ])
+    def test_ensure_endpoint_description_is_present(self, data):
         '''When converting a set of resources for a WFS or WMS service, ensure there is an endpoint
            description (a GetCapabilities-URL), and all resources are annotated as expected.'''
 
-        resources = [
-            {
-                'url': 'https://fbinter.stadt-berlin.de/fb?loginkey=showMap&mapId=nsg_lsg@senstadt'
-            },
-            {
-                'url': 'https://fbinter.stadt-berlin.de/fb/wfs/data/senstadt/s_boden_wfs1_2015'
-            },
-            {
-                'url': 'https://fbinter.stadt-berlin.de/fb_daten/beschreibung/umweltatlas/datenformatbeschreibung/Datenformatbeschreibung_kriterien_zur_bewertung_der_bodenfunktionen2015.pdf',
-                'description': 'Technische Beschreibung'
-            }
-        ]
 
         annotator = FISBrokerResourceAnnotator()
-        annotated = annotator.annotate_all_resources(resources)
-        expected = [
-            {
-                'name': 'Endpunkt-Beschreibung des WFS-Service',
-                'weight': 10,
-                'format': FORMAT_WFS,
-                'url': normalize_url('https://fbinter.stadt-berlin.de/fb/wfs/data/senstadt/s_boden_wfs1_2015?request=getcapabilities&service=wfs&version=2.0.0'),
-                'internal_function': FUNCTION_API_DESCRIPTION,
-                'main': True,
-                'description': 'Maschinenlesbare Endpunkt-Beschreibung des WFS-Service. Weitere Informationen unter https://www.ogc.org/standards/wfs'
-            },
-            {
-                'name': 'API-Endpunkt des WFS-Service',
-                'weight': 15,
-                'format': FORMAT_WFS,
-                'url': 'https://fbinter.stadt-berlin.de/fb/wfs/data/senstadt/s_boden_wfs1_2015',
-                'internal_function': FUNCTION_API_ENDPOINT,
-                'main': False,
-                'description': 'API-Endpunkt des WFS-Service. Weitere Informationen unter https://www.ogc.org/standards/wfs'
-            },
-            {
-                'name': 'Serviceseite im FIS-Broker',
-                'weight': 20,
-                'format': FORMAT_HTML,
-                'url': 'https://fbinter.stadt-berlin.de/fb?loginkey=showMap&mapId=nsg_lsg@senstadt', 'internal_function': 'web_interface',
-                'main': False,
-            },
-            {
-                'description': 'Technische Beschreibung',
-                'weight': 30,
-                'url': 'https://fbinter.stadt-berlin.de/fb_daten/beschreibung/umweltatlas/datenformatbeschreibung/Datenformatbeschreibung_kriterien_zur_bewertung_der_bodenfunktionen2015.pdf',
-                'internal_function': 'documentation',
-                'main': False,
-                'name': 'Technische Beschreibung'
-            }
-        ]
+        annotated = annotator.annotate_all_resources(data['resources'])
 
-        _assert_equal(annotated, expected)
+        assert annotated == data['expected']
 
-        resources = [
-            {
-                'url': 'https://fbinter.stadt-berlin.de/fb/wms/senstadt/wmsk_02_14_04gwtemp_60m'
-            }
-        ]
+    def test_filename_as_fallback_for_empty_description(self):
+        '''
+            Documentation resources that have an empty description should 
+            use the filename as a fallback.
+        '''
+        url = 'https://fbinter.stadt-berlin.de/fb_daten/beschreibung/umweltatlas/datenformatbeschreibung/Datenformatbeschreibung_05_04_forstbetriebskarte2014.html'
+        resource = {
+            'url': url,
+            'name': '',
+            'description': '',
+            'format': FORMAT_HTML
+        }
+        annotator = FISBrokerResourceAnnotator()
+        annotated = annotator.annotate_resource(resource)
 
-        annotated = annotator.annotate_all_resources(resources)
-        expected = [
-            {
-                'name': 'Endpunkt-Beschreibung des WMS-Service',
-                'weight': 10,
-                'format': FORMAT_WMS,
-                'url': normalize_url('https://fbinter.stadt-berlin.de/fb/wms/senstadt/wmsk_02_14_04gwtemp_60m?request=getcapabilities&service=wms&version=1.3.0'),
-                'internal_function': FUNCTION_API_DESCRIPTION,
-                'main': True,
-                'description': 'Maschinenlesbare Endpunkt-Beschreibung des WMS-Service. Weitere Informationen unter https://www.ogc.org/standards/wms'
-            },
-            {
-                'url': 'https://fbinter.stadt-berlin.de/fb/wms/senstadt/wmsk_02_14_04gwtemp_60m',
-                'name': 'API-Endpunkt des WMS-Service',
-                'weight': 15,
-                'format': FORMAT_WMS,
-                'internal_function': FUNCTION_API_ENDPOINT,
-                'main': False,
-                'description': 'API-Endpunkt des WMS-Service. Weitere Informationen unter https://www.ogc.org/standards/wms'
-            },
-        ]
-
-        _assert_equal(annotated, expected)
+        assert annotated['name'] == 'Datenformatbeschreibung_05_04_forstbetriebskarte2014.html'

@@ -11,16 +11,19 @@ from sqlalchemy import exists
 
 from ckan import model
 from ckan.lib.munge import munge_title_to_name
+from ckan.plugins import IBlueprint, IConfigurer, ITemplateHelpers
+
 import ckan.plugins as plugins
 import ckan.plugins.toolkit as toolkit
 from ckanext.harvest.model import (
     HarvestJob ,
     HarvestGatherError ,
+    HarvestObjectExtra ,
 )
 from ckanext.spatial.interfaces import ISpatialHarvester
 from ckanext.spatial.harvesters.csw import CSWHarvester
 from ckanext.spatial.validation.validation import BaseValidator
-from ckanext.fisbroker import HARVESTER_ID
+from ckanext.fisbroker import blueprint, HARVESTER_ID
 from ckanext.fisbroker.fisbroker_resource_annotator import FISBrokerResourceAnnotator
 import ckanext.fisbroker.helper as helpers
 
@@ -218,7 +221,7 @@ def extras_as_list(extras_dict):
        will be converted to JSON-strings.'''
 
     extras_list = []
-    for key, value in extras_dict.iteritems():
+    for key, value in extras_dict.items():
         if isinstance(value, (list, dict)):
             extras_list.append({'key': key, 'value': json.dumps(value)})
         else:
@@ -230,9 +233,9 @@ def extras_as_list(extras_dict):
 class FisbrokerPlugin(CSWHarvester):
     '''Main plugin class of the ckanext-fisbroker extension.'''
 
-    plugins.implements(plugins.IConfigurer)
-    plugins.implements(plugins.ITemplateHelpers)
-    plugins.implements(plugins.IRoutes, inherit=True)
+    plugins.implements(IConfigurer)
+    plugins.implements(ITemplateHelpers)
+    plugins.implements(IBlueprint, inherit=True)
     plugins.implements(ISpatialHarvester, inherit=True)
 
     import_since_keywords = ["last_error_free", "big_bang"]
@@ -374,23 +377,14 @@ class FisbrokerPlugin(CSWHarvester):
             'berlin_is_reimport_job': helpers.is_reimport_job,
         }
 
-    # IRoutes:
+    # IBlueprint
 
-    def before_map(self, map_):
+    def get_blueprint(self):
         """
         Implementation of
-        https://docs.ckan.org/en/latest/extensions/plugin-interfaces.html#ckan.plugins.interfaces.IRoutes.before_map
+        https://docs.ckan.org/en/latest/extensions/plugin-interfaces.html#ckan.plugins.interfaces.IBlueprint.get_blueprint
         """
-        map_.connect(
-            '/dataset/{package_id}/reimport',
-            controller='ckanext.fisbroker.controller:FISBrokerController',
-            action='reimport_browser')
-        map_.connect(
-            '/api/harvest/reimport',
-            controller='ckanext.fisbroker.controller:FISBrokerController',
-            action='reimport_api')
-
-        return map_
+        return blueprint.reimportapi
 
     # ISpatialHarvester
 
@@ -405,26 +399,36 @@ class FisbrokerPlugin(CSWHarvester):
         '''Implementation of ckanext.spatial.interfaces.ISpatialHarvester.get_package_dict().
         https://github.com/ckan/ckanext-spatial/blob/master/ckanext/spatial/interfaces.py
         '''
+
+        def remember_error(harvest_object, error_dict):
+            '''
+            Add a HarvestObjectExtra to the harvest object to remember the reason for 
+            a failed import.
+            '''
+            if harvest_object:
+                harvest_object.extras.append(HarvestObjectExtra(key='error',value=json.dumps(error_dict)))
+
         LOG.debug("--------- get_package_dict ----------")
 
         if hasattr(data_dict, '__getitem__'):
 
             package_dict = data_dict['package_dict']
             iso_values = data_dict['iso_values']
+            harvest_object = data_dict.get('harvest_object')
 
             LOG.debug(iso_values['title'])
 
             # checking if marked for Open Data
             if not marked_as_opendata(data_dict):
                 LOG.debug("no 'opendata' tag, skipping dataset ...")
-                context['error'] = json.dumps({ 'code': 1, 'description': 'not tagged as open data'})
+                remember_error(harvest_object, {'code': 1, 'description': 'not tagged as open data'})
                 return 'skip'
             LOG.debug("this is tagged 'opendata', continuing ...")
 
             # we're only interested in service resources
             if not marked_as_service_resource(data_dict):
                 LOG.debug("this is not a service resource, skipping dataset ...")
-                context['error'] = json.dumps({'code': 2, 'description': 'not a service resource'})
+                remember_error(harvest_object, {'code': 2, 'description': 'not a service resource'})
                 return 'skip'
             LOG.debug("this is a service resource, continuing ...")
 
@@ -444,14 +448,14 @@ class FisbrokerPlugin(CSWHarvester):
                 package_dict['author'] = contact_info['author']
             else:
                 LOG.error('could not determine responsible organisation name, skipping ...')
-                context['error'] = json.dumps({'code': 3, 'description': 'no organisation name'})
+                remember_error(harvest_object, {'code': 3, 'description': 'no organisation name'})
                 return 'skip'
 
             if 'maintainer_email' in contact_info:
                 package_dict['maintainer_email'] = contact_info['maintainer_email']
             else:
                 LOG.error('could not determine responsible organisation email, skipping ...')
-                context['error'] = json.dumps({'code': 4, 'description': 'no responsible organisation email'})
+                remember_error(harvest_object, {'code': 4, 'description': 'no responsible organisation email'})
                 return 'skip'
 
             if 'maintainer' in contact_info:
@@ -466,7 +470,7 @@ class FisbrokerPlugin(CSWHarvester):
 
             if 'license_id' not in license_and_attribution:
                 LOG.error('could not determine license code, skipping ...')
-                context['error'] = json.dumps({'code': 5, 'description': 'could not determine license code'})
+                remember_error(harvest_object, {'code': 5, 'description': 'could not determine license code'})
                 return 'skip'
 
             package_dict['license_id'] = license_and_attribution['license_id']
@@ -480,7 +484,7 @@ class FisbrokerPlugin(CSWHarvester):
 
             if 'date_released' not in reference_dates:
                 LOG.error('could not get anything for date_released from ISO values, skipping ...')
-                context['error'] = json.dumps({'code': 6, 'description': 'no release date'})
+                remember_error(harvest_object, {'code': 6, 'description': 'no release date'})
                 return 'skip'
 
             extras['date_released'] = reference_dates['date_released']

@@ -7,9 +7,9 @@
 import logging
 import os
 import re
-from urlparse import urlparse, parse_qs
+from urllib.parse import urlparse, parse_qs
 from threading import Thread
-from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from lxml import etree
 
 import requests
@@ -57,10 +57,10 @@ class MockFISBroker(BaseHTTPRequestHandler):
     """A mock FIS-Broker for testing."""
 
     def do_GET(self):
-        """Implementation of do_GET()."""
+        """Implementation of do_GET()"""
 
         parsed_url = urlparse(self.path)
-        if parsed_url.path == CSW_PATH:
+        if parsed_url.path.rstrip('/') == CSW_PATH:
             query = parse_qs(parsed_url.query)
 
             csw_request = query.get('request')
@@ -120,12 +120,12 @@ class MockFISBroker(BaseHTTPRequestHandler):
         self.send_response(response_code)
         self.send_header('Content-Type', content_type)
         self.end_headers()
-        self.wfile.write(response_content)
+        self.wfile.write(response_content.encode('utf-8'))
 
     def do_POST(self):
-        """Implementation of do_POST()."""
+        """Implementation of do_POST()"""
 
-        length = int(self.headers.getheader('content-length', 0))
+        length = int(self.headers.get('content-length', 0))
         body = self.rfile.read(length)
         root = etree.fromstring(body)
         csw_request = root.tag
@@ -144,7 +144,7 @@ class MockFISBroker(BaseHTTPRequestHandler):
         self.send_response(response_code)
         self.send_header('Content-Type', content_type)
         self.end_headers()
-        self.wfile.write(response_content)
+        self.wfile.write(response_content.encode('utf-8'))
 
 
 def start_mock_server(port=PORT):

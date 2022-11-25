@@ -1,7 +1,7 @@
 import os
 
-import SimpleHTTPServer
-import SocketServer
+from http.server import SimpleHTTPRequestHandler
+from socketserver import TCPServer
 from threading import Thread
 
 
@@ -14,14 +14,14 @@ def serve(port=PORT):
     os.chdir(os.path.join(os.path.dirname(os.path.abspath(__file__)),
                           'xml'))
 
-    Handler = SimpleHTTPServer.SimpleHTTPRequestHandler
+    Handler = SimpleHTTPRequestHandler
 
-    class TestServer(SocketServer.TCPServer):
+    class TestServer(TCPServer):
         allow_reuse_address = True
 
-    httpd = TestServer(("", PORT), Handler)
+    httpd = TestServer(("", port), Handler)
 
-    print('Serving test HTTP server at port', PORT)
+    print('Serving test HTTP server at port', port)
 
     httpd_thread = Thread(target=httpd.serve_forever)
     httpd_thread.setDaemon(True)
