@@ -4,7 +4,7 @@
   {% set package_object = h.berlin_package_object(pkg) %}
   {% if h.check_access('package_update', {'id':pkg.id }) and h.berlin_is_fisbroker_package(package_object) %}
     {% if h.berlin_fisbroker_guid(package_object) %}
-        {% link_for _('Reimport'), controller='ckanext.fisbroker.controller:FISBrokerController', action='reimport_browser', package_id=pkg.id, class_='btn', icon='cloud-download' %}
+        {% link_for _('Reimport'), named_route='reimportapi.reimport_through_browser', package_id=pkg.id, class_='btn btn-default', icon='cloud-download' %}
     {% endif %}
   {% endif %}
   {{ super() }}
