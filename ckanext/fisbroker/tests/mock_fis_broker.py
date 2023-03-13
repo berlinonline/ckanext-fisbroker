@@ -21,6 +21,7 @@ VALID_GUID =   '65715c6e-bbaf-3def-982b-3b5156272da7'
 INVALID_GUID = '65715c6e-bbaf-3def-982b-3b5156272da8'
 METADATA_NOW = '2019-11-25T13:18:43'
 METADATA_OLD = '2019-11-23T13:18:43'
+RECORD_DUMMY_COUNT = 10
 
 LOG = logging.getLogger(__name__)
 
@@ -48,6 +49,17 @@ def read_responses():
             responses['records'][name] = response_file.read()
         else:
             responses[name] = response_file.read()
+
+    # Add a bunch of extra records that are create dynamically by replacing placeholders in a template
+    record_dummy_template_file = open(os.path.join(folder_path, f"record_dummy_template.xml"), "r")
+    record_dummy_template = record_dummy_template_file.read()
+    for index in range(RECORD_DUMMY_COUNT):
+        guid = f"record_{index:02d}"
+        title = f"Nährstoffversorgung des Oberbodens 2015 (Umweltatlas) {index:02d}"
+        record = record_dummy_template.replace('[[GUID]]', guid)
+        record = record.replace('[[TITLE]]', title)
+        responses['records'][guid] = record
+
     return responses
 
 RESPONSES = read_responses()

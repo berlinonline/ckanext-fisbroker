@@ -1,6 +1,7 @@
 """Common code for the various FIS-Broker test classes."""
 
 from dateutil.parser import parse
+from datetime import datetime, timedelta
 import logging
 import pytest
 import warnings
@@ -159,3 +160,29 @@ class FisbrokerTestBase(object):
         rebuild(fb_dataset['id'])
 
         return fb_dataset, source, job
+
+    def _create_mock_data(self, source: HarvestSource, job: HarvestJob, first: int, last: int)->list:
+
+        datasets = []
+        for index in range(first, last+1):
+            fb_dataset = ckan_factories.Dataset()
+            guid = f"record_{index:02d}"
+            harvest_object = harvest_factories.HarvestObjectObj(guid=guid,
+                                                                job=job,
+                                                                source=source,
+                                                                package_id=fb_dataset['id'])
+            harvest_object.current = True
+            harvest_object.metadata_modified_date = parse(METADATA_OLD) + timedelta(seconds=index)
+            harvest_object.state = "COMPLETE"
+            harvest_object.import_finished = datetime.now()
+            harvest_object.save()
+            Session.refresh(harvest_object)
+            datasets.append(fb_dataset)
+
+        job.status = u'Finished'
+        job.save()
+
+        from ckan.lib.search import rebuild
+        rebuild()
+
+        return datasets
