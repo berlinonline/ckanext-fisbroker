@@ -1,289 +1,264 @@
-'''Module to implement a paster action for the FIS-Broker-Harvester'''
+'''Module to implement a click CLI for the FIS-Broker-Harvester'''
 
+import json
 import logging
 import sys
 import time
+
+import click
+
 from ckan import logic
 from ckan import model
-from ckan.lib import cli
 
 from ckanext.fisbroker import HARVESTER_ID
-import ckanext.fisbroker.controller as controller
-from ckanext.fisbroker.plugin import FisbrokerPlugin
+import ckanext.fisbroker.blueprint as blueprint
+import ckanext.fisbroker.plugin as plugin
 
-from ckanext.harvest.model import HarvestObject
-from ckanext.harvest.model import HarvestSource
+from ckanext.harvest.model import HarvestObject, HarvestSource
 
 LOG = logging.getLogger(__name__)
-FISBROKER_SOURCE_NAME = u'harvest-fisbroker'
+FISBROKER_SOURCE_NAME = 'harvest-fisbroker'
+JSON_INDENT = 2
 
-class FISBrokerCommand(cli.CkanCommand):
-    '''Actions for the FIS-Broker harvester
+def _filter_dataset(dataset):
+    '''Filter relevant information for an individual dataset.'''
+    return {
+        'id': dataset.get('id'),
+        'name': dataset.get('name'),
+        'title': dataset.get('title')
+    }
 
-    Usage:
+def _filter_datasets(datasets):
+    '''Generate a list of filtered datasets.'''
+    return [_filter_dataset(dataset) for dataset in datasets]
 
-      fisbroker list_sources
-        - List all instances of the FIS-Broker harvester.
-
-      fisbroker [-s {source-id}] list_datasets
-        - List the ids and titles of all datasets harvested by the
-          FIS-Broker harvester. Either of all instances or of the
-          one specified by {source-id}.
-
-      fisbroker [-s|-d {source|dataset-id}] [-o {offset}] [-l {limit}] reimport_dataset
-        - Reimport the specified datasets. The specified datasets are either
-          all datasets by all instances of the FIS-Broker harvester (if no options
-          are used), or all datasets by the FIS-Broker harvester instance with
-          {source-id}, or the single dataset identified by {dataset-id}.
-          To reimport only a subset or page through the complete set of datasets,
-          use the --offset,-o and --limit,-l options.
-
-      fisbroker [-s {source-id}] last_successful_job
-        - Show the last successful job that was not a reimport job, either
-          of the harvester instance specified by {source-id}, or of
-          all instances.
-
-      fisbroker [-s {source-id}] harvest_objects
-        - Show all harvest objects with their CSW-guids and CKAN package ids, either
-          of the harvester instance specified by {source-id}, or of all instances.
-
-      fisbroker [-b {berlin_source}] list_datasets_berlin_source
-        - Show all datasets for which the 'berlin_source' extra is {berlin_source}
-          (default is 'harvest-fisbroker').
+def _list_sources():
+    '''List all instances of the FIS-Broker harvester.
     '''
+    context = {'model': model, 'session': model.Session}
+    sources = logic.get_action('harvest_source_list')(context, {})
 
-    summary = __doc__.split('\n')[0]
-    usage = __doc__
+    return [source for source in sources if source['type'] == HARVESTER_ID]
 
-    def __init__(self,name):
+def _list_packages(source_id: str, offset: int = 0, limit: int = -1):
+    '''List the ids and titles of all datasets harvested by the
+    FIS-Broker harvester. Either of all instances or of the
+    one specified by {source-id}.
+    '''
+    click.echo(f"listing datasets for source {source_id} ...", err=True)
 
-        super(FISBrokerCommand, self).__init__(name)
+    filter_query = f'harvest_source_id: "{source_id}"'
+    search_dict = {
+        'fq': filter_query,
+        'start': 0,
+        'rows': 500,
+        'sort': 'name asc',
+    }
+    context = {'model': model, 'session': model.Session}
 
-        self.parser.add_option('-s',
-                               '--source-id',
-                               dest='source_id',
-                               default=False,
-                               help='Id of the FIS-Broker instance to consider')
+    total_results = []
+    while True:
+        result = logic.get_action('package_search')(context, search_dict)
+        length = len(result['results'])
+        total_results += result['results']
+        search_dict['start'] = search_dict['start'] + length
+        if len(total_results) >= result['count']:
+            break
 
-        self.parser.add_option('-d',
-                               '--dataset-id',
-                               dest='dataset_id',
-                               default=False,
-                               help='Id of dataset to reimport')
-
-        self.parser.add_option('-l',
-                               '--limit',
-                               dest='limit',
-                               default=False,
-                               type='int',
-                               help='Max number of datasets to reimport')
-
-        self.parser.add_option('-o',
-                               '--offset',
-                               dest='offset',
-                               default=False,
-                               type='int',
-                               help='Index of the first dataset to reimport')
-
-        self.parser.add_option('-b',
-                               '--berlinsource',
-                               dest='berlin_source',
-                               default=FISBROKER_SOURCE_NAME,
-                               help='Value of the `berlin_source` extra to filter by')
-
-    def print_dataset(self, dataset):
-        '''Print an individual dataset.'''
-        print(f"{dataset.get('id')},{dataset.get('name')},\"{dataset.get('title')}\"")
-
-    def print_datasets(self, datasets):
-        '''Print all datasets.'''
-        print('id,name,title')
-        for dataset in datasets:
-            self.print_dataset(dataset)
-
-    def print_harvest_sources(self, sources):
-        '''Print all harvest sources (taken from ckanext-harvest).'''
-        if sources:
-            print()
-        for source in sources:
-            self.print_harvest_source(source)
-
-    def print_harvest_source(self, source):
-        '''Print an individual harvest source (taken from ckanext-harvest).'''
-        print(f"Source id: {source.get('id')}")
-        if 'name' in source:
-            # 'name' is only there if the source comes from the Package
-            print(f"     name: {source.get('name')}")
-        print(f"      url: {source.get('url')}")
-        # 'type' if source comes from HarvestSource, 'source_type' if it comes
-        # from the Package
-        print(f"   active: {source.get('active', source.get('state') == 'active')}")
-        print(f"frequency: {source.get('frequency')}")
-        print(f"     jobs: {source.get('status').get('job_count')}")
-        print()
-
-    def print_harvest_objects(self, harvest_objects):
-        '''Print all harvest objects.'''
-        print('source_id,csw_guid,package_id')
-        for ho in harvest_objects:
-            print(f"{ho['source_id']},{ho['csw_guid']},{ho['package_id']}")
-
-    def list_sources(self):
-        '''List all instances of the FIS-Broker harvester.
-        '''
-        context = {'model': model, 'session': model.Session}
-        sources = logic.get_action('harvest_source_list')(context, {})
-
-        return [source for source in sources if source['type'] == HARVESTER_ID]
-
-
-    def list_packages(self, source_id):
-        '''List the ids and titles of all datasets harvested by the
-        FIS-Broker harvester. Either of all instances or of the
-        one specified by {source-id}.
-        '''
-
-        LOG.debug(f"listing datasets for source {source_id} ...")
-
-        filter_query = f'harvest_source_id: "{source_id}"'
-        search_dict = {
-            'fq': filter_query,
-            'start': 0,
-            'rows': 500,
-            'sort': 'metadata_modified desc',
-        }
-        context = {'model': model, 'session': model.Session}
-
-        total_results = []
-        while True:
-            result = logic.get_action('package_search')(context, search_dict)
-            length = len(result['results'])
-            total_results += result['results']
-            search_dict['start'] = search_dict['start'] + length
-            if len(total_results) >= result['count']:
-                break
-
-        offset = 0
+    if limit < 0:
         limit = len(total_results)
-        if self.options.offset:
-            offset = self.options.offset
-        if self.options.limit:
-            limit = self.options.limit
 
-        return total_results[offset:offset+limit]
-
-    def reimport_dataset(self, dataset_ids):
-        '''Reimport all datasets in dataset_ids.'''
-
-        fb_controller = controller.FISBrokerController()
-        context = {'model': model, 'session': model.Session}
-        result = fb_controller.reimport_batch(dataset_ids, context)
-
-        return result
+    return total_results[offset:offset+limit]
 
 
-    def command(self):
-        '''Implementation of the paster command
-        '''
+def _reimport_dataset(dataset_ids, context):
+    '''Reimport all datasets in dataset_ids.'''
 
-        class MockHarvestJob:
-            pass
+    reimported_packages = blueprint.reimport_batch(dataset_ids, context)
 
-        self._load_config()
+    result = {}
+    for package_id, record in reimported_packages.items():
+        result[package_id] = {
+            'fisbroker_guid': record.identifier ,
+            'title': record.identification.title
+        }
 
-        if not self.args:
-            self.parser.print_usage()
-            sys.exit(1)
-        cmd = self.args[0]
+    return result
 
-        if cmd == 'list_sources':
-            LOG.debug("listing all instances of FisbrokerPlugin ...")
-            sources = self.list_sources()
-            self.print_harvest_sources(sources)
-        elif cmd == 'list_datasets':
-            LOG.debug("listing datasets harvested by FisbrokerPlugin ...")
-            sources = [source.get('id') for source in self.list_sources()]
-            if len(self.args) >= 2:
-                sources = [str(self.args[1])]
-            for source in sources:
-                start = time.time()
-                packages = self.list_packages(source)
-                self.print_datasets(packages)
-                LOG.debug(f"there were {len(packages)} results ...")
-                end = time.time()
-                LOG.debug(f"This took {end - start} seconds")
-        elif cmd == 'reimport_dataset':
-            LOG.debug("reimporting datasets ...")
-            package_ids = []
-            if self.options.dataset_id:
-                LOG.debug("reimporting a single dataset ...")
-                package_ids = [ str(self.options.dataset_id) ]
-            else:
-                sources = []
-                if self.options.source_id:
-                    LOG.debug(f"reimporting all dataset from a single source: {self.options.source_id} ...")
-                    sources = [ str(self.options.source_id) ]
-                else:
-                    LOG.debug("reimporting all dataset from all sources ...")
-                    sources = [ source.get('id') for source in self.list_sources() ]
-                for source in sources:
-                    package_ids += [package['name'] for package in self.list_packages(source)]
-            start = time.time()
-            self.reimport_dataset(package_ids)
-            end = time.time()
-            LOG.debug(f"This took {end - start} seconds")
-        elif cmd == 'last_successful_job':
-            sources = []
-            if self.options.source_id:
-                LOG.debug(f"finding last successful job from a single source: {self.options.source_id} ...")
-                sources = [str(self.options.source_id)]
-            else:
-                LOG.debug("finding last successful job from all sources ...")
-                sources = [source.get('id') for source in self.list_sources()]
-            for source in sources:
-                harvest_job = MockHarvestJob()
-                harvest_job.source = HarvestSource.get(source)
-                harvest_job.id = 'fakeid'
-                last_successful_job = FisbrokerPlugin.last_error_free_job(harvest_job)
-                LOG.debug(last_successful_job)
-        elif cmd == 'harvest_objects':
-            sources = []
-            if self.options.source_id:
-                LOG.debug(f"finding all harvest objects from a single source: {self.options.source_id} ...")
-                sources = [str(self.options.source_id)]
-            else:
-                LOG.debug("finding all harvest objects from all sources ...")
-                sources = [source.get('id') for source in self.list_sources()]
-            for source in sources:
-                harvest_job = MockHarvestJob()
-                harvest_job.source = HarvestSource.get(source)
-                harvest_job.id = 'fakeid'
-                query = model.Session.query(HarvestObject.guid, HarvestObject.package_id).\
-                    filter(HarvestObject.current == True).\
-                    filter(HarvestObject.harvest_source_id == harvest_job.source.id)
-                harvest_objects = []
+def get_commands():
+    return [fisbroker]
 
-                for guid, package_id in query:
-                    harvest_objects.append({
-                        "source_id": source,
-                        "csw_guid": guid,
-                        "package_id": package_id
-                    })
+@click.group()
+def fisbroker():
+    '''
+    Command-line actions for the FIS-Broker harvester
+    '''
+    pass
 
-                self.print_harvest_objects(harvest_objects)
-        elif cmd == 'list_datasets_berlin_source':
-            LOG.debug(f"finding all packages with extra 'berlin_source' == '{self.options.berlin_source}' ...")
-            query = model.Session.query(model.Package).filter_by(
-                state=model.State.ACTIVE)
-            packages = [
-                {
-                    "name": pkg.name,
-                    "id": pkg.id,
-                    "extras": {key: value for key, value in pkg.extras.items()}
-                } for pkg in query ]
-            print('package_name,package_id')
-            for package in packages:
-                if (package["extras"].get("berlin_source", "_undefined") == self.options.berlin_source):
-                    print(f"{package['name']},{package['id']}")
+@fisbroker.command()
+def list_sources():
+    '''
+    List all instances of the FIS-Broker harvester.
+    '''
+    click.echo("listing all instances of FisbrokerPlugin ...", err=True)
+    sources = _list_sources()
+
+    click.echo(json.dumps(sources, indent=JSON_INDENT))
+
+@fisbroker.command()
+@click.option("-s",  "--source", help="The source id of the harvester")
+@click.option("-o", "--offset", default=0, help="Index of the first dataset to reimport")
+@click.option("-l", "--limit", default=-1, help="Max number of datasets to reimport")
+def list_datasets(source: str, offset: int, limit: int):
+    '''
+    List the ids and titles of all datasets harvested by the
+    FIS-Broker harvester. Either of all instances or of the
+    one specified by {source-id}.
+    '''
+    click.echo("listing datasets harvested by FisbrokerPlugin ...", err=True)
+    sources = [_source.get('id') for _source in _list_sources()]
+    if source is not None:
+        sources = [source]
+    filtered_packages = {}
+    for _source in sources:
+        start = time.time()
+        packages = _list_packages(_source, offset, limit)
+        filtered_packages[_source] = _filter_datasets(packages)
+        click.echo(f"there were {len(filtered_packages[_source])} results ...", err=True)
+        end = time.time()
+        click.echo(f"This took {end - start} seconds", err=True)
+
+    click.echo(json.dumps(filtered_packages, indent=JSON_INDENT))
+
+
+@fisbroker.command()
+@click.option("-s",  "--source", help="The source id of the harvester")
+def harvest_objects(source: str):
+    '''
+    Show all harvest objects with their CSW-guids and CKAN package ids, either
+    of the harvester instance specified by {source-id}, or of all instances.
+    '''
+    sources = [_source.get('id') for _source in _list_sources()]
+    if source is not None:
+        sources = [str(source)]
+    output = {}
+    for _source in sources:
+        harvest_job = MockHarvestJob()
+        harvest_job.source = HarvestSource.get(_source)
+        harvest_job.id = 'fakeid'
+        query = model.Session.query(HarvestObject.guid, HarvestObject.package_id).\
+            filter(HarvestObject.current == True).\
+            filter(HarvestObject.harvest_source_id == harvest_job.source.id)
+        harvest_objects = []
+
+        for guid, package_id in query:
+            harvest_objects.append({
+                "csw_guid": guid,
+                "package_id": package_id
+            })
+
+        output[str(_source)] = harvest_objects
+
+    click.echo(json.dumps(output, indent=JSON_INDENT))
+
+@fisbroker.command()
+@click.option("-s",  "--source", help="The source id of the harvester")
+def last_successful_job(source: str):
+    '''
+    Show the last successful job that was not a reimport job, either
+    of the harvester instance specified by {source-id}, or of
+    all instances.
+    '''
+    sources = []
+    output = {}
+    if source:
+        click.echo(f"finding last successful job from a single source: {source} ...", err=True)
+        sources = [source]
+    else:
+        sources = [source.get('id') for source in _list_sources()]
+        click.echo("finding last successful job from all sources ...", err=True)
+    for source in sources:
+        harvest_job = MockHarvestJob()
+        harvest_job.source = HarvestSource.get(source)
+        harvest_job.id = 'fakeid'
+        last_successful_job = plugin.FisbrokerPlugin.last_error_free_job(harvest_job)
+        if last_successful_job:
+            output[source] = last_successful_job.as_dict()
+
+    click.echo(json.dumps(output, indent=JSON_INDENT))
+
+@fisbroker.command()
+@click.option("-b", "--berlinsource", default='harvest-fisbroker', help="The value for the 'berlin_source' extra we want to filter by.")
+def list_datasets_berlin_source(berlinsource: str):
+    '''
+    Show all active datasets for which the 'berlin_source' extra is {berlin_source}
+    (default is 'harvest-fisbroker').
+    '''
+    query = model.Session.query(model.Package).filter_by(
+        state=model.State.ACTIVE)
+    datasets = [
+        {
+            "name": pkg.name,
+            "title": pkg.title,
+            "id": pkg.id,
+            "extras": {key: value for key, value in pkg.extras.items()}
+        } for pkg in query ]
+
+    datasets = [dataset for dataset in datasets if dataset["extras"].get("berlin_source", "_undefined") == berlinsource]
+    filtered_packages = _filter_datasets(datasets)
+
+    click.echo(json.dumps(filtered_packages, indent=JSON_INDENT))
+
+@fisbroker.command()
+@click.option("-s", "--source", help="The source id of the harvester")
+@click.option("-d", "--datasetid", help="The id of the dataset")
+@click.option("-o", "--offset", default=0, help="Index of the first dataset to reimport")
+@click.option("-l", "--limit", default=-1, help="Max number of datasets to reimport")
+@click.pass_context
+def reimport_dataset(ctx: click.Context, source: str, datasetid: str, offset: int, limit: int):
+    '''
+    Reimport the specified datasets. The specified datasets are either
+    all datasets by all instances of the FIS-Broker harvester (if no options
+    are used), or all datasets by the FIS-Broker harvester instance with
+    {source-id}, or the single dataset identified by {dataset-id}.
+    To reimport only a subset or page through the complete set of datasets,
+    use the --offset,-o and --limit,-l options.
+    '''
+    click.echo("reimporting datasets ...", err=True)
+    package_ids = []
+    if datasetid:
+        click.echo("reimporting a single dataset ...", err=True)
+        package_ids = [ datasetid ]
+    else:
+        sources = []
+        if source:
+            click.echo(f"reimporting all dataset from a single source: {source} ...", err=True)
+            sources = [ source ]
         else:
-            print(f'Command {cmd} not recognized')
+            click.echo("reimporting all dataset from all sources ...", err=True)
+            sources = [ source.get('id') for source in _list_sources() ]
+        for source in sources:
+            package_ids += [package['name'] for package in _list_packages(source, offset, limit)]
+
+    start = time.time()
+    site_user = logic.get_action(u'get_site_user')({
+        u'model': model,
+        u'ignore_auth': True},
+        {}
+    )
+    context = {
+        u'model': model,
+        u'session': model.Session,
+        u'ignore_auth': True,
+        u'user': site_user['name'],
+    }
+    flask_app = ctx.meta['flask_app']
+    with flask_app.test_request_context():
+        output = _reimport_dataset(package_ids, context)
+
+    click.echo(json.dumps(output, indent=JSON_INDENT))
+    end = time.time()
+    click.echo(f"This took {end - start} seconds", err=True)
+
+class MockHarvestJob:
+    pass

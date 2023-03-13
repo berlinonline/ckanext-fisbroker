@@ -11,7 +11,7 @@ from sqlalchemy import exists
 
 from ckan import model
 from ckan.lib.munge import munge_title_to_name
-from ckan.plugins import IBlueprint, IConfigurer, ITemplateHelpers
+from ckan.plugins import IBlueprint, IClick, IConfigurer, ITemplateHelpers
 
 import ckan.plugins as plugins
 import ckan.plugins.toolkit as toolkit
@@ -26,6 +26,7 @@ from ckanext.spatial.validation.validation import BaseValidator
 from ckanext.fisbroker import blueprint, HARVESTER_ID
 from ckanext.fisbroker.fisbroker_resource_annotator import FISBrokerResourceAnnotator
 import ckanext.fisbroker.helper as helpers
+import ckanext.fisbroker.cli as cli
 
 LOG = logging.getLogger(__name__)
 TIMEDELTA_DEFAULT = 0
@@ -233,6 +234,7 @@ def extras_as_list(extras_dict):
 class FisbrokerPlugin(CSWHarvester):
     '''Main plugin class of the ckanext-fisbroker extension.'''
 
+    plugins.implements(IClick)
     plugins.implements(IConfigurer)
     plugins.implements(ITemplateHelpers)
     plugins.implements(IBlueprint, inherit=True)
@@ -294,6 +296,14 @@ class FisbrokerPlugin(CSWHarvester):
         if 'timedelta' in self.source_config:
             return int(self.source_config['timedelta'])
         return TIMEDELTA_DEFAULT
+
+    # IClick
+
+    def get_commands(self):
+        '''
+        Implementation of IClick.get_commands(): https://docs.ckan.org/en/2.9/extensions/plugin-interfaces.html#ckan.plugins.interfaces.IClick.get_commands
+        '''
+        return cli.get_commands()
 
     # IHarvester
 

@@ -6,6 +6,7 @@
 - This is the first version that requires Python 3 / CKAN >= 2.9.
 - Switch from RST to Markdown for Readme.
 - Switch testing framework from Nose to Pytest.
+- Switch command line tool from paster to click.
 
 ## 1.2.1
 
