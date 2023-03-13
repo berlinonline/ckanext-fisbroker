@@ -12,7 +12,6 @@ from ckan.logic import get_action
 from ckan import model
 from ckan.model import Session
 from ckan.logic.schema import default_update_package_schema
-from ckan.tests import helpers
 from ckan.tests import factories as ckan_factories
 
 from ckanext.harvest.model import (
@@ -35,6 +34,14 @@ FISBROKER_HARVESTER_CONFIG = {
     'name': 'fis-broker-harvest-source' ,
     'source_type': HARVESTER_ID ,
     'url': f"http://127.0.0.1:{MOCK_PORT}/csw"
+}
+
+WFS_FIXTURE = {
+    'title': 'Test Source',
+    'name': 'test-source',
+    'url': 'http://127.0.0.1:8999/wfs-open-data.xml',
+    'object_id': '65715c6e-bbaf-3def-982b-3b5156272da7',
+    'source_type': 'fisbroker'
 }
 
 
@@ -71,20 +78,20 @@ def base_context():
 
 class FisbrokerTestBase(object):
 
-    def _create_source(self, source_fixture=FISBROKER_HARVESTER_CONFIG):
+    def _create_source(self, source_config=FISBROKER_HARVESTER_CONFIG):
         context = {
             'model': model,
             'session': Session,
             'user': u'harvest'
         }
 
-        source_dict = get_action('harvest_source_create')(context,source_fixture)
+        source_dict = get_action('harvest_source_create')(context,source_config)
         source = HarvestSource.get(source_dict['id'])
         assert source
 
         return source
 
-    def _create_job(self,source_id):
+    def _create_job(self, source_id):
         # Create a job
         context = {
             'model': model,
@@ -98,9 +105,9 @@ class FisbrokerTestBase(object):
 
         return job
 
-    def _create_source_and_job(self, source_fixture=FISBROKER_HARVESTER_CONFIG):
+    def _create_source_and_job(self, source_config=FISBROKER_HARVESTER_CONFIG):
 
-        source = self._create_source(source_fixture)
+        source = self._create_source(source_config)
         job = self._create_job(source.id)
 
         return source, job
@@ -130,7 +137,7 @@ class FisbrokerTestBase(object):
 
         return obj
 
-    def _harvester_setup(self, source_config, fb_guid=VALID_GUID):
+    def _harvester_setup(self, source_config=FISBROKER_HARVESTER_CONFIG, fb_guid=VALID_GUID):
         # create a harvest source and matching job
         source, job = self._create_source_and_job(source_config)
         fb_dataset = ckan_factories.Dataset()
@@ -142,8 +149,13 @@ class FisbrokerTestBase(object):
                                                             package_id=fb_dataset['id'])
         harvest_object.current = True
         harvest_object.metadata_modified_date = parse(METADATA_OLD)
+        harvest_object.save()
+        Session.refresh(harvest_object)
 
         job.status = u'Finished'
         job.save()
+
+        from ckan.lib.search import rebuild
+        rebuild(fb_dataset['id'])
 
         return fb_dataset, source, job

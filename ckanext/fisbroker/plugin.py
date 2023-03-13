@@ -563,7 +563,7 @@ class FisbrokerPlugin(CSWHarvester):
             return CSWHarvester.get_package_dict(self, context, data_dict)
 
     @classmethod
-    def last_error_free_job(cls, harvest_job):
+    def last_error_free_job(cls, harvest_job) -> HarvestJob:
         '''Override last_error_free_job() from
            ckanext.harvest.harvesters.base.HarvesterBase to filter out
            jobs that were created by a reimport action.'''

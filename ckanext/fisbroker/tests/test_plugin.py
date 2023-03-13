@@ -38,7 +38,7 @@ from ckanext.fisbroker.plugin import (
     TIMEOUT_DEFAULT,
     TIMEDELTA_DEFAULT,
 )
-from ckanext.fisbroker.tests import FisbrokerTestBase, base_context
+from ckanext.fisbroker.tests import FisbrokerTestBase, base_context, WFS_FIXTURE
 from ckanext.fisbroker.tests.mock_fis_broker import reset_mock_server
 
 LOG = logging.getLogger(__name__)
@@ -416,16 +416,8 @@ class TestPlugin(FisbrokerTestBase):
         '''Do the whole process: import and convert a document from the CSW-server, test
            if all the values in the converted dict are as expected.'''
         # Create source1
-        wfs_fixture = {
-            'title': 'Test Source',
-            'name': 'test-source',
-            'url': 'http://127.0.0.1:8999/wfs-open-data.xml',
-            'object_id': '65715c6e-bbaf-3def-982b-3b5156272da7',
-            'source_type': 'fisbroker'
-        }
-
-        source, job = self._create_source_and_job(wfs_fixture)
-        harvest_object = self._run_job_for_single_document(job, wfs_fixture['object_id'])
+        source, job = self._create_source_and_job(WFS_FIXTURE)
+        harvest_object = self._run_job_for_single_document(job, WFS_FIXTURE['object_id'])
         package_dict = Package.get(harvest_object.package_id).as_dict()
 
         # Package was created

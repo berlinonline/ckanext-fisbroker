@@ -150,7 +150,7 @@ def reimport_batch(package_ids, context):
     # instatiate the CSW connector (on the reasonable assumption that harvester_url is
     # the same for all package_ids)
     package_id = None
-    reimported_packages = []
+    reimported_packages = {}
     try:
         csw = CatalogueServiceWeb(harvester_url)
         for package_id, fb_guid in ckan_fb_mapping.items():
@@ -184,7 +184,7 @@ def reimport_batch(package_ids, context):
 
                 Session.refresh(obj)
 
-                reimported_packages.append(record)
+                reimported_packages[package_id] = record
 
             else:
                 raise NotFoundInFisbrokerError(package_id, fb_guid)
