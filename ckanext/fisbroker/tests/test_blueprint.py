@@ -202,9 +202,6 @@ class TestReimport(FisbrokerTestBase):
            return an HTTP 200.'''
 
         fb_dataset_dict, source, job = self._harvester_setup(FISBROKER_HARVESTER_CONFIG)
-        job.status = 'Finished'
-        job.save()
-        package_update(base_context, fb_dataset_dict)
         package_id = fb_dataset_dict['id']
         package = Package.get(package_id)
         old_title = package.title
