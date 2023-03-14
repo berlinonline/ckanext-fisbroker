@@ -1,14 +1,28 @@
 # ckanext-fisbroker
 
-![logo for the ckanext-fisbroker CKAN extension](logo/fisbroker-harvester-logo_small.png)
-
 [![Tests](https://github.com/berlinonline/ckanext-fisbroker/workflows/Tests/badge.svg?branch=master)](https://github.com/berlinonline/ckanext-fisbroker/actions)
 [![Code Coverage](http://codecov.io/github/berlinonline/ckanext-fisbroker/coverage.svg?branch=master)](http://codecov.io/github/berlinonline/ckanext-fisbroker?branch=master)
 
+![logo for the ckanext-fisbroker CKAN extension](logo/fisbroker-harvester-logo_small.png)
+
 This plugin belongs to a set of plugins for the _Datenregister_ – the non-public [CKAN](https://ckan.org) instance that is part of Berlin's open data portal [daten.berlin.de](https://daten.berlin.de).
 
-This is an extension of the CWS Harvester from [ckanext-spatial](https://github.com/ckan/ckanext-spatial), intended to harvest the Berlin Geoportal [FIS-Broker](https://www.stadtentwicklung.berlin.de/geoinformation/fis-broker/). It mainly adapts the harvesting to extract metadata conforming to the [Berlin Open Data Schema](https://datenregister.berlin.de/schema/berlin_od_schema.json).
+`ckanext-fisbroker` is an extension of the CWS Harvester from [ckanext-spatial](https://github.com/ckan/ckanext-spatial), intended to harvest the Berlin Geoportal [FIS-Broker](https://www.stadtentwicklung.berlin.de/geoinformation/fis-broker/). It mainly adapts the harvesting to extract metadata conforming to the [Berlin Open Data Schema](https://datenregister.berlin.de/schema/berlin_od_schema.json).
 
+The plugin implements the following core CKAN interfaces:
+
+- [IBlueprint](https://docs.ckan.org/en/latest/extensions/plugin-interfaces.html#ckan.plugins.interfaces.IBlueprint)
+- [IClick](https://docs.ckan.org/en/latest/extensions/plugin-interfaces.html#ckan.plugins.interfaces.IClick)
+- [IConfigurer](https://docs.ckan.org/en/latest/extensions/plugin-interfaces.html#ckan.plugins.interfaces.IConfigurer)
+- [ITemplateHelpers](https://docs.ckan.org/en/latest/extensions/plugin-interfaces.html#ckan.plugins.interfaces.ITemplateHelpers)
+
+It also implements ISpatialHarvester, which is defined in the [ckanext-spatial](https://github.com/ckan/ckanext-spatial) extension.
+
+- [ISpatialHarvester](https://docs.ckan.org/projects/ckanext-spatial/en/latest/harvesters.html#customizing-the-harvesters)
+
+## Requirements
+
+This plugin has been tested with CKAN 2.9.8 (which requires Python 3).
 
 ## Configuration
 
@@ -32,41 +46,65 @@ Clicking will trigger a reimport job for that dataset.
 
 ![Screenshot eines Datensatzes "Schutzgebiete nach Naturschutzrecht" im Datenregister, mit rot hervorgehobenem Reimport-Button](image/reimport_button.png)
 
-### Paster Command
+### Command Line Interface
 
-The plugin also defines a `fisbroker` paster command to list or reimport one or more datasets, as well as some other tasks.
-You can get the documentation for the paster command as follows:
+The plugin also defines a `fisbroker` command for the `ckan` cli tool, to list or reimport one or more datasets, as well as some other tasks.
+You can get the documentation for the command as follows (the location of the `--config` parameter depends on your setup):
 
 ```
-(default) user:/usr/lib/ckan/default/src/ckan# paster --plugin=ckanext-fisbroker fisbroker
-Usage: paster fisbroker [options] 
+(default) :/usr/lib/ckan/default$ ckan --config /etc/ckan/default/ckan.ini fisbroker
 
-Actions for the FIS-Broker harvester
+Usage: ckan fisbroker [OPTIONS] COMMAND [ARGS]...
 
-      fisbroker list_sources
-        - List all instances of the FIS-Broker harvester.
+  Command-line actions for the FIS-Broker harvester
 
-      fisbroker [-s {source-id}] list_datasets
-        - List the ids and titles of all datasets harvested by the
-          FIS-Broker harvester. Either of all instances or of the
-          one specified by {source-id}.
+Options:
+  --help  Show this message and exit.
 
-      fisbroker [-s|-d {source|dataset-id}] [-o {offset}] [-l {limit}] reimport_dataset
-        - Reimport the specified datasets. The specified datasets are either
-          all datasets by all instances of the FIS-Broker harvester (if no options
-          are used), or all datasets by the FIS-Broker harvester instance with
-          {source-id}, or the single dataset identified by {dataset-id}.
-          To reimport only a subset or page through the complete set of datasets,
-          use the --offset,-o and --limit,-l options.
+Commands:
+  harvest-objects              Show all harvest objects with their CSW-
+                               guids...
 
-      fisbroker [-s {source-id}] last_successful_job
-        - Show the last successful job that was not a reimport job, either
-          of the harvester instance specified by {source-id}, or by
-          all instances.
+  last-successful-job          Show the last successful job that was not a...
+  list-datasets                List the ids and titles of all datasets...
+  list-datasets-berlin-source  Show all active datasets for which the...
+  list-sources                 List all instances of the FIS-Broker...
+  reimport-dataset             Reimport the specified datasets.
+```
+
+The command outputs JSON to STDOUT, e.g.:
+
+```
+(default) :/usr/lib/ckan/default$ ckan --config /etc/ckan/default/ckan.ini fisbroker list-sources
+
+listing all instances of FisbrokerPlugin ...
+[
+  {
+    "id": "89f414c8-5ebf-4ac4-90c3-1b06f403768d",
+    "url": "https://fbinter.stadt-berlin.de/fb/csw",
+    "title": "FIS Broker",
+    "description": "",
+    "config": "{\n  \"import_since\": \"2021-10-04\", \n  \"timeout\": 120\n}",
+    "created": "2018-05-30 15:03:51.047337",
+    "type": "fisbroker",
+    "active": true,
+    "user_id": "",
+    "publisher_id": "",
+    "frequency": "MANUAL",
+    "next_run": "2021-09-22 23:00:04.205522",
+    "publisher_title": "",
+    "status": {
+      "job_count": 492,
+      "next_harvest": "Not yet scheduled",
+      "last_harvest_request": "None"
+    }
+  }
+]
+
 ```
 
 ## Copying and License
 
-This material is copyright © 2016 – 2022  [BerlinOnline Stadtportal GmbH & Co. KG](https://berlinonline.net).
+This material is copyright © 2016 – 2023  [BerlinOnline Stadtportal GmbH & Co. KG](https://berlinonline.net).
 
-It is open and licensed under the [MIT License](LICENSE).
+It is open source sand licensed under the [MIT License](LICENSE).
