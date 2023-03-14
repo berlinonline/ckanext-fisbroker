@@ -2,13 +2,17 @@
 
 ## Development
 
+## [1.3.0](https://github.com/berlinonline/ckanext-fisbroker/releases/tag/1.3.0)
+
+_(2023-03-14)_
+
 - Convert to Python 3.
 - This is the first version that requires Python 3 / CKAN >= 2.9.
 - Switch from RST to Markdown for Readme.
 - Switch testing framework from Nose to Pytest.
 - Switch command line tool from paster to click.
 
-## 1.2.1
+## [1.2.1](https://github.com/berlinonline/ckanext-fisbroker/releases/tag/1.2.1)
 
 _(2021-09-29)_
 
@@ -18,20 +22,20 @@ _(2021-09-29)_
 - Fix typos in log output.
 - Fix version in setup.py.
 
-## 1.1.1
+## [1.1.1](https://github.com/berlinonline/ckanext-fisbroker/releases/tag/1.1.1)
 
 _(2020-10-23)_
 
 - Add documentation for `-o`/`-l` options for paster command.
 
-## 1.1.0
+## [1.1.0](https://github.com/berlinonline/ckanext-fisbroker/releases/tag/1.1.0)
 
 _(2020-10-09)_
 
 - Add paster command `fisbroker`.
 - Add reimport functionality (fetch and import a set of datasets that have been previously harvested), with access through UI (button on dataset page) and paster command.
 
-## 1.0.0
+## [1.0.0](https://github.com/berlinonline/ckanext-fisbroker/releases/tag/1.0.0)
 
 _(2020-02-25)_
 
