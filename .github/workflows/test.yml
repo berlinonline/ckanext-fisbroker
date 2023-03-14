@@ -60,7 +60,7 @@ jobs:
         pip install -r ckanext-harvest/requirements.txt
         pip install -r ckanext-harvest/dev-requirements.txt
         # Install ckanext-spatial
-        git clone https://github.com/berlinonline/ckanext-spatial@bo-prs
+        git clone --branch bo_prs https://github.com/berlinonline/ckanext-spatial
         pip install -e ckanext-spatial
         pip install -r ckanext-spatial/requirements.txt
     - name: Setup extension (CKAN >= 2.9)
