@@ -31,7 +31,7 @@ jobs:
       solr:
         image: ckan/ckan-solr-dev:${{ matrix.ckan-version }}
       postgres:
-        image: ckan/ckan-postgres-dev:${{ matrix.ckan-version }}
+        image: postgis/postgis:10-3.1
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
@@ -48,21 +48,43 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Install requirements
+    - name: Create Database
+      run: |
+        psql --host=postgres --username=postgres --command="CREATE USER ckan_default WITH PASSWORD 'pass' NOSUPERUSER NOCREATEDB NOCREATEROLE;"
+        createdb --encoding=utf-8 --host=postgres --username=postgres --owner=ckan_default ckan_test
+        psql --host=postgres --username=postgres --command="CREATE USER datastore_write WITH PASSWORD 'pass' NOSUPERUSER NOCREATEDB NOCREATEROLE;"
+        psql --host=postgres --username=postgres --command="CREATE USER datastore_read WITH PASSWORD 'pass' NOSUPERUSER NOCREATEDB NOCREATEROLE;"
+        createdb --encoding=utf-8 --host=postgres --username=postgres --owner=datastore_write datastore_test
+    - name: Install ckanext-harvest
+      run: |
+        git clone https://github.com/ckan/ckanext-harvest
+        cd ckanext-harvest
+        pip install -r pip-requirements.txt
+        pip install -r dev-requirements.txt
+        pip install -e .
+    - name: Install ckanext-spatial dependencies
+      run: |
+        apk add --no-cache \
+          geos \
+          geos-dev \
+          proj-util \
+          proj-dev \
+          libxml2 \
+          libxslt \
+          gcc \
+          libxml2-dev \
+          libxslt-dev
+    - name: Install ckanext-spatial
+      run: |
+        git clone --branch bo_prs https://github.com/berlinonline/ckanext-spatial
+        pip install -e ckanext-spatial
+        pip install -r ckanext-spatial/requirements.txt
+    - name: Install own requirements
       run: |
         pip install -r dev-requirements.txt
         pip install -e .
         # Replace default path to CKAN core config file with the one on the container
         sed -i -e 's/use = config:.*/use = config:\/srv\/app\/src\/ckan\/test-core.ini/' test.ini
-        # Install ckanext-harvest
-        git clone https://github.com/ckan/ckanext-harvest
-        pip install -e ckanext-harvest
-        pip install -r ckanext-harvest/requirements.txt
-        pip install -r ckanext-harvest/dev-requirements.txt
-        # Install ckanext-spatial
-        git clone --branch bo_prs https://github.com/berlinonline/ckanext-spatial
-        pip install -e ckanext-spatial
-        pip install -r ckanext-spatial/requirements.txt
     - name: Setup extension (CKAN >= 2.9)
       run: |
         ckan -c test.ini db init
