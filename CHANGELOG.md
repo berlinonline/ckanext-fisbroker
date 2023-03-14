@@ -11,6 +11,7 @@ _(2023-03-14)_
 - Switch from RST to Markdown for Readme.
 - Switch testing framework from Nose to Pytest.
 - Switch command line tool from paster to click.
+- Add Github CI.
 
 ## [1.2.1](https://github.com/berlinonline/ckanext-fisbroker/releases/tag/1.2.1)
 
