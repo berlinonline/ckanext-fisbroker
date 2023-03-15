@@ -7,7 +7,7 @@
 
 This plugin belongs to a set of plugins for the _Datenregister_ – the non-public [CKAN](https://ckan.org) instance that is part of Berlin's open data portal [daten.berlin.de](https://daten.berlin.de).
 
-`ckanext-fisbroker` is an extension of the CWS Harvester from [ckanext-spatial](https://github.com/ckan/ckanext-spatial), intended to harvest the Berlin Geoportal [FIS-Broker](https://www.stadtentwicklung.berlin.de/geoinformation/fis-broker/). It mainly adapts the harvesting to extract metadata conforming to the [Berlin Open Data Schema](https://datenregister.berlin.de/schema/berlin_od_schema.json).
+`ckanext-fisbroker` is an extension of the CWS Harvester from [ckanext-spatial](https://github.com/ckan/ckanext-spatial), intended to harvest Berlin's geoportal [FIS-Broker](https://www.stadtentwicklung.berlin.de/geoinformation/fis-broker/). It mainly adapts the harvesting to extract metadata conforming to the [Berlin Open Data Schema](https://datenregister.berlin.de/schema/berlin_od_schema.json).
 
 The plugin implements the following core CKAN interfaces:
 
@@ -24,7 +24,9 @@ It also implements ISpatialHarvester, which is defined in the [ckanext-spatial](
 
 This plugin has been tested with CKAN 2.9.8 (which requires Python 3).
 
-## Configuration
+## Custom Configuration Options
+
+A number of custom configuration options can be set for the harvester:
 
 - `import_since`: Sets a filter on the query to CSW to retrieve only records that were changed after a given date. Specified either as an ISO8601 date `YYYYMMDDTHH:MM:SS`, or as one of the following keywords:
 
@@ -107,4 +109,4 @@ listing all instances of FisbrokerPlugin ...
 
 This material is copyright © 2016 – 2023  [BerlinOnline Stadtportal GmbH & Co. KG](https://berlinonline.net).
 
-It is open source sand licensed under the [MIT License](LICENSE).
+It is open source and licensed under the [MIT License](LICENSE).
