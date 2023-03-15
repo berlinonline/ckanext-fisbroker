@@ -109,4 +109,7 @@ listing all instances of FisbrokerPlugin ...
 
 This material is copyright © 2016 – 2023  [BerlinOnline Stadtportal GmbH & Co. KG](https://berlinonline.net).
 
-It is open source and licensed under the [MIT License](LICENSE).
+This extension is open and licensed under the GNU Affero General Public License (AGPL) v3.0.
+Its full text may be found at:
+
+http://www.fsf.org/licensing/licenses/agpl-3.0.html
