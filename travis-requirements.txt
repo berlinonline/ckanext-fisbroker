@@ -10,7 +10,7 @@ requests>=1.1.0
 
 # requirements for ckanext-harvest:
 pika==0.9.8
-redis==2.10.1
+redis==4.5.3
 
 # fisbroker's original requirements
 -r requirements.txt
