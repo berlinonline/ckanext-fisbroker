@@ -3,24 +3,25 @@ from codecs import open  # To use a consistent encoding
 from os import path
 
 here = path.abspath(path.dirname(__file__))
+pluginname = 'fisbroker'
 
 # Get the long description from the relevant file
 with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
-setup(
-    name='''ckanext-fisbroker''',
+with open(path.join(here, 'ckanext', pluginname, 'VERSION')) as version_file:
+    version = version_file.read().strip()
 
-    # Versions should comply with PEP440.  For a discussion on single-sourcing
-    # the version across setup.py and the project code, see
-    # http://packaging.python.org/en/latest/tutorial.html#version
-    version='1.3.0',
+setup(
+    name=f'ckanext-{pluginname}',
+
+    version=version,
 
     description='''Plugin to harvest Berlin's FIS-Broker geo information system into the datenregister.berlin.de schema''',
     long_description=long_description,
 
     # The project's main homepage.
-    url='https://github.com/berlinonline/ckanext-fisbroker',
+    url=f'https://github.com/berlinonline/ckanext-{pluginname}',
 
     # Author details
     author='''Knud M\xc3\xb6ller''',
@@ -63,14 +64,6 @@ setup(
     # installed, specify them here.  If using Python 2.6 or less, then these
     # have to be included in MANIFEST.in as well.
     include_package_data=True,
-    package_data={
-    },
-
-    # Although 'package_data' is the preferred approach, in some case you may
-    # need to place data files outside of your packages.
-    # see http://docs.python.org/3.4/distutils/setupscript.html#installing-additional-files
-    # In this case, 'data_file' will be installed into '<sys.prefix>/my_data'
-    data_files=[],
 
     # To provide executable scripts, use entry points in preference to the
     # "scripts" keyword. Entry points provide cross-platform support and allow

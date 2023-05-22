@@ -2,6 +2,13 @@
 
 ## Development
 
+## [1.3.1](https://github.com/berlinonline/ckanext-fisbroker/releases/tag/1.3.1)
+
+_(2023-05-22)_
+
+- Define extension's version string in [VERSION](VERSION), make it available as `ckanext.fisbroker.__version__` and in [setup.py](setup.py).
+
+
 ## [1.3.0](https://github.com/berlinonline/ckanext-fisbroker/releases/tag/1.3.0)
 
 _(2023-03-14)_
