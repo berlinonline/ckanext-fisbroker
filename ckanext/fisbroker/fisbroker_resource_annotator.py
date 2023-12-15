@@ -62,7 +62,7 @@ class FISBrokerResourceAnnotator:
             resource['internal_function'] = FUNCTION_API_ENDPOINT
             resource['weight'] = 15
         else:
-            method = query.get('request')
+            method = query.get('request') or query.get('REQUEST')
             if method:
                 if method.pop().lower() == "getcapabilities":
                     resource['name'] = f"Endpunkt-Beschreibung des {service_type}-Service"
