@@ -2,6 +2,10 @@
 
 ## Development
 
+- Fix a bug regarding case-sensitivity in the CSW interface.
+- Fix problems in testing pipeline regarding versions of dependencies.
+
+
 ## [1.3.1](https://github.com/berlinonline/ckanext-fisbroker/releases/tag/1.3.1)
 
 _(2023-05-22)_
