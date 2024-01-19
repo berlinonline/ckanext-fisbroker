@@ -10,6 +10,7 @@ import six
 from six.moves.urllib.parse import urlparse
 from six.moves.urllib.request import urlopen
 
+from time import sleep
 import uuid
 import hashlib
 import dateutil
@@ -497,6 +498,62 @@ class FisbrokerPlugin(CSWHarvester):
 
         return ids
 
+    def fetch_stage(self,harvest_object, retries=3, wait_time=5.0):
+
+        # Check harvest object status
+        status = self._get_object_extra(harvest_object, 'status')
+
+        if status == 'delete':
+            # No need to fetch anything, just pass to the import stage
+            return True
+
+        log = logging.getLogger(__name__ + '.CSW.fetch')
+        log.debug(f"CswHarvester fetch_stage for object: {harvest_object.id}")
+
+        url = harvest_object.source.url
+        for attempt in range(1, retries + 1):
+            try:
+                log.info(f"Setting up CSW client: Attempt #{attempt} of {retries}")
+                self._setup_csw_client(url)
+                break
+            except Exception as e:
+                err = f"Error setting up CSW client: {text_traceback()}"
+                if attempt < retries:
+                    log.info(err)
+                    log.info(f"waiting {wait_time} seconds...")
+                    sleep(wait_time)
+                    log.info(f"Repeating request! (attempt #{(attempt + 1)})")
+                    continue
+                else:
+                    self._save_object_error(f"Error setting up CSW client: {e}",
+                                            harvest_object)
+                    return False
+
+        identifier = harvest_object.guid
+        try:
+            record = self.csw.getrecordbyid([identifier], outputschema=self.output_schema())
+        except Exception as e:
+            self._save_object_error(f"Error getting the CSW record with GUID {identifier}: {str(e)}", harvest_object)
+            return False
+
+        if record is None:
+            self._save_object_error(f"Empty record for GUID {identifier}", harvest_object)
+            return False
+
+        try:
+            # Save the fetch contents in the HarvestObject
+            # Contents come from csw_client already declared and encoded as utf-8
+            # Remove original XML declaration
+            content = re.sub('<\?xml(.*)\?>', '', record['xml'])
+
+            harvest_object.content = content.strip()
+            harvest_object.save()
+        except Exception as e:
+            self._save_object_error(f"Error saving the harvest object for GUID {identifier} [{e}]", harvest_object)
+            return False
+
+        log.debug(f"XML content saved (len {len(record['xml'])})")
+        return True
 
     def import_stage(self, harvest_object):
         context = {

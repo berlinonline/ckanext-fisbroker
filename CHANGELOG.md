@@ -2,6 +2,9 @@
 
 ## Development
 
+- Move `gather_stage()`, `fetch_stage()` and `import_stage()` here from [our fork of ckanext-spatial](https://github.com/berlinonline/ckanext-spatial/tree/bo_prs).
+- Map the license id for DL-DE-BY that FIS-Broker uses to the one we're using internally.
+
 ## [1.3.2](https://github.com/berlinonline/ckanext-fisbroker/releases/tag/1.3.2)
 
 _(2023-12-18)_
