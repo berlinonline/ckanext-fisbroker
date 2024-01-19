@@ -1,7 +1,7 @@
 # coding: utf-8
 """Tests for plugin.py."""
 
-from datetime import timedelta
+from datetime import datetime, timedelta
 import json
 import logging
 import os
@@ -11,7 +11,8 @@ from owslib.fes import PropertyIsGreaterThanOrEqualTo
 
 from ckan.logic import get_action
 from ckan.logic.action.update import package_update
-from ckan.model import Package
+from ckan.model import Package, Session
+import ckan.tests.factories as factories
 
 from ckanext.harvest.queue import (
     gather_stage ,
@@ -19,7 +20,9 @@ from ckanext.harvest.queue import (
 )
 from ckanext.harvest.model import (
     HarvestObject ,
+    HarvestObjectExtra ,
 )
+from ckanext.harvest.tests import factories as harvest_factories
 
 from ckanext.spatial.harvesters.base import SpatialHarvester
 from ckanext.spatial.model import ISODocument
@@ -473,6 +476,102 @@ class TestPlugin(FisbrokerTestBase):
 
         # name
         assert "nahrstoffversorgung-des-oberbodens-2015-umweltatlas-wfs-65715c6e" == package_dict['name']
+
+    def test_import_stage_first_create_new_dataset(self, app, base_context):
+        '''Scenario 1: 
+            - We're importing a record from CSW.
+            - There is no dataset in the CKAN db with the same GUID as this record's GUID.
+            - That means there is no previous harvest object for this record's
+              harvest object.
+            - That means this is the first time we import this record (for all intents and
+              purposes).
+            - That means we need to create a new dataset.
+        '''
+        # Create source
+        source, job = self._create_source_and_job(WFS_FIXTURE)
+        harvest_object = self._run_job_for_single_document(job, WFS_FIXTURE['object_id'])
+        package_dict = Package.get(harvest_object.package_id).as_dict()
+
+        # Package was created
+        assert package_dict
+
+    def test_import_stage_second_changes_existing_dataset(self, app, base_context):
+        '''Scenario 2: 
+            - We're importing a record from CSW.
+            - There is already a dataset in the CKAN db with the same GUID as this record's GUID.
+            - That means there is a previous harvest object for this record's
+              harvest object.
+            - That means this is not the first time we import this record.
+            - That means we need to change an existing dataset.
+        '''
+
+        # first, we simulate the first/previous harvest run by creating a package and
+        # matching harvest object
+        fb_org = factories.Organization(name='harvester-fis-broker')
+        group = factories.Group(name='geo')
+        dataset = factories.Dataset(
+            title="Nährstoffversorgung des Oberbodens 2015 (Umweltatlas) - [WFS]",
+            name='nahrstoffversorgung-des-oberbodens-2015-umweltatlas-wfs-65715c6e',
+            owner_org=fb_org['id'],
+            groups=[{'id': group['id'], 'name': group['name']}],
+            license_id='dl-de-by-2.0',
+            author='Senatsverwaltung für Umwelt, Verkehr und Klimaschutz Berlin',
+            date_released=f'2018-08-13',
+            maintainer_email='michael.thelemann@senuvk.berlin.de',
+            extras=[{'key': 'guid', 'value': WFS_FIXTURE['object_id']}]
+        )
+        # this is the package object as if it was created by a harvest
+        # it was created without a 'notes' attribute
+        package = Package.get(dataset['id'])
+        assert not package.maintainer
+        assert not 'attribution_text' in package.extras
+        assert not 'berlin_source' in package.extras
+
+        harvester = FisbrokerPlugin()
+        source1, job1 = self._create_source_and_job(WFS_FIXTURE)
+        url = job1.source.url
+        content = harvester._get_content_as_unicode(url)
+        previous_harvest_object = harvest_factories.HarvestObjectObj(guid=WFS_FIXTURE['object_id'],
+            job=job1,
+            source=source1,
+            package_id=package.id,
+        )
+        previous_harvest_object.current = True
+        # we need to pretend that the `metadata_modified_date` is earlier than that
+        # returned by the mocked CSW call triggered below (2019-11-25T13:18:43)
+        previous_harvest_object.metadata_modified_date = datetime.fromisoformat("2019-06-07")
+        previous_harvest_object.save()
+        job1.status = 'Finished'
+        job1.save()
+
+        assert previous_harvest_object.current == True
+        assert previous_harvest_object.metadata_modified_date
+        assert job1.status == 'Finished'
+
+        # now we do an actual harvest (just the import_stage) on our mocked CSW.
+        # we provide the HarvestObject with the guid and package_id that it would
+        # have received in the gather_stage
+        job2 = self._create_job(source1.id)
+        url = job2.source.url
+        content = harvester._get_content_as_unicode(url)
+        harvest_object = harvest_factories.HarvestObjectObj(guid=WFS_FIXTURE['object_id'],
+            job=job2,
+            content=content,
+            package_id=package.id,
+            extras={'status': 'change'})
+        harvest_object.save()
+
+        harvester.import_stage(harvest_object)
+        Session.refresh(harvest_object)
+
+        job2.status = u'Finished'
+        job2.save()
+
+        # there are several attributes that were not included in the package created
+        # at the top, but should have been added by the harvest run (maintainer,
+        # berlin_source etc.)
+        assert package.maintainer == "Hr. Dr. Thelemann"
+        assert package.extras['berlin_source'] == 'harvest-fisbroker'
 
     def test_empty_config(self):
         '''Test that an empty config just returns unchanged.'''

@@ -79,7 +79,7 @@ def base_context():
 
 class FisbrokerTestBase(object):
 
-    def _create_source(self, source_config=FISBROKER_HARVESTER_CONFIG):
+    def _create_source(self, source_config: dict = FISBROKER_HARVESTER_CONFIG) -> HarvestSource:
         context = {
             'model': model,
             'session': Session,
@@ -92,7 +92,7 @@ class FisbrokerTestBase(object):
 
         return source
 
-    def _create_job(self, source_id):
+    def _create_job(self, source_id: str) -> HarvestJob:
         # Create a job
         context = {
             'model': model,
@@ -106,14 +106,14 @@ class FisbrokerTestBase(object):
 
         return job
 
-    def _create_source_and_job(self, source_config=FISBROKER_HARVESTER_CONFIG):
+    def _create_source_and_job(self, source_config: dict = FISBROKER_HARVESTER_CONFIG):
 
         source = self._create_source(source_config)
         job = self._create_job(source.id)
 
         return source, job
 
-    def _run_job_for_single_document(self, harvest_job, object_id):
+    def _run_job_for_single_document(self, harvest_job: HarvestJob, object_id: str)-> HarvestObject:
 
         harvester = FisbrokerPlugin()
 
@@ -138,7 +138,7 @@ class FisbrokerTestBase(object):
 
         return obj
 
-    def _harvester_setup(self, source_config=FISBROKER_HARVESTER_CONFIG, fb_guid=VALID_GUID):
+    def _harvester_setup(self, source_config: dict = FISBROKER_HARVESTER_CONFIG, fb_guid: str = VALID_GUID):
         # create a harvest source and matching job
         source, job = self._create_source_and_job(source_config)
         fb_dataset = ckan_factories.Dataset()
@@ -161,7 +161,7 @@ class FisbrokerTestBase(object):
 
         return fb_dataset, source, job
 
-    def _create_mock_data(self, source: HarvestSource, job: HarvestJob, first: int, last: int)->list:
+    def _create_mock_data(self, source: HarvestSource, job: HarvestJob, first: int, last: int) -> list:
 
         datasets = []
         for index in range(first, last+1):
