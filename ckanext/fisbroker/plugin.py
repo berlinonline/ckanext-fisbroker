@@ -6,27 +6,43 @@ import logging
 import os
 import re
 
+import six
+from six.moves.urllib.parse import urlparse
+from six.moves.urllib.request import urlopen
+
+import uuid
+import hashlib
+import dateutil
+
 from owslib.fes import PropertyIsGreaterThanOrEqualTo
 from sqlalchemy import exists
 
-from ckan import model
+from ckan import logic, model
 from ckan.lib.munge import munge_title_to_name
+from ckan.lib.navl.validators import not_empty
+from ckan.lib.search.index import PackageSearchIndex
 from ckan.plugins import IBlueprint, IClick, IConfigurer, ITemplateHelpers
-
 import ckan.plugins as plugins
 import ckan.plugins.toolkit as toolkit
+
+from ckantoolkit import config
+from ckanext.harvest.interfaces import IHarvester
 from ckanext.harvest.model import (
     HarvestJob ,
     HarvestGatherError ,
+    HarvestObject ,
     HarvestObjectExtra ,
 )
 from ckanext.spatial.interfaces import ISpatialHarvester
+from ckanext.spatial.harvesters.base import text_traceback
 from ckanext.spatial.harvesters.csw import CSWHarvester
 from ckanext.spatial.validation.validation import BaseValidator
 from ckanext.fisbroker import blueprint, HARVESTER_ID
 from ckanext.fisbroker.fisbroker_resource_annotator import FISBrokerResourceAnnotator
 import ckanext.fisbroker.helper as helpers
 import ckanext.fisbroker.cli as cli
+
+from ckanext.spatial.model import ISODocument
 
 LOG = logging.getLogger(__name__)
 TIMEDELTA_DEFAULT = 0
@@ -246,6 +262,7 @@ class FisbrokerPlugin(CSWHarvester):
     plugins.implements(IConfigurer)
     plugins.implements(ITemplateHelpers)
     plugins.implements(IBlueprint, inherit=True)
+    plugins.implements(IHarvester, inherit=True)
     plugins.implements(ISpatialHarvester, inherit=True)
 
     import_since_keywords = ["last_error_free", "big_bang"]
@@ -322,8 +339,8 @@ class FisbrokerPlugin(CSWHarvester):
         '''
         return {
             'name': HARVESTER_ID,
-            'title': 'FIS Broker',
-            'description': 'A harvester specifically for Berlin\'s FIS Broker geo data CSW service.'
+            'title': "FIS Broker",
+            'description': "A harvester specifically for Berlin's FIS Broker geo data CSW service."
         }
 
     def validate_config(self, config):
@@ -366,6 +383,389 @@ class FisbrokerPlugin(CSWHarvester):
             raise error
 
         return CSWHarvester.validate_config(self, config)
+
+    def gather_stage(self, harvest_job):
+        log = logging.getLogger(__name__ + '.CSW.gather')
+        log.debug(f"FisbrokerPlugin gather_stage for job: {harvest_job}")
+        # Get source URL
+        url = harvest_job.source.url
+
+        self._set_source_config(harvest_job.source.config)
+
+        try:
+            self._setup_csw_client(url)
+        except Exception as e:
+            log.debug(f"Error contacting the CSW server: {e}")
+            self._save_gather_error(f"Error contacting the CSW server: {e}", harvest_job)
+            return None
+
+        query = model.Session.query(HarvestObject.guid, HarvestObject.package_id).\
+                                    filter(HarvestObject.current==True).\
+                                    filter(HarvestObject.harvest_source_id==harvest_job.source.id)
+        guid_to_package_id = {}
+
+        for guid, package_id in query:
+            guid_to_package_id[guid] = package_id
+
+        guids_in_db = set(guid_to_package_id.keys())
+
+        # extract cql filter if any
+        cql = self.source_config.get('cql')
+
+        def get_identifiers(constraints=[]):
+            guid_set = set()
+            for identifier in self.csw.getidentifiers(page=10, outputschema=self.output_schema(),
+                                                      cql=cql, constraints=constraints):
+                try:
+                    log.info(f"Got identifier {identifier} from the CSW")
+                    if identifier is None:
+                        log.error(f"CSW returned identifier {identifier}, skipping...")
+                        continue
+
+                    guid_set.add(identifier)
+                except Exception as e:
+                    self._save_gather_error(f"Error for the identifier {identifier} [{e}]", harvest_job)
+                    continue
+
+            return guid_set
+
+        # first get the (date)constrained set of identifiers,
+        # to figure what was added and/or changed
+        # only those identifiers will be fetched
+        log.debug(f"Starting gathering for {url} (constrained)")
+
+        try:
+            constraints = self.get_constraints(harvest_job)
+            guids_in_harvest_constrained = get_identifiers(constraints)
+
+            # then get the complete set of identifiers, to figure out
+            # what was deleted
+            log.debug(f"Starting gathering for {url} (unconstrained)")
+            guids_in_harvest_complete = set()
+            if (constraints == []):
+                log.debug("There were no constraints, so GUIDS(unconstrained) == GUIDs(constrained)")
+                guids_in_harvest_complete = guids_in_harvest_constrained
+            else:
+                guids_in_harvest_complete = get_identifiers()
+        except Exception as e:
+            log.error(f"Exception: {text_traceback()}")
+            self._save_gather_error(
+                f"Error gathering the identifiers from the CSW server [{str(e)}]", harvest_job)
+            return None
+
+        # new datasets are those that were returned by the (constrained) harvest AND are not in
+        # already in the database
+        new = guids_in_harvest_constrained - guids_in_db
+
+        # deleted datasets are those that were in the database AND were not included in the 
+        # (unconstrained) harvest
+        delete = guids_in_db - guids_in_harvest_complete
+
+        # changed datasets are those that were in the database AND were also included in the
+        # (constrained) harvest
+        change = guids_in_db & guids_in_harvest_constrained
+
+        log.debug(f"|new GUIDs|: {len(new)}")
+        log.debug(f"|deleted GUIDs|: {len(delete)}")
+        log.debug(f"|changed GUIDs|: {len(change)}")
+
+        ids = []
+        for guid in new:
+            obj = HarvestObject(guid=guid, job=harvest_job,
+                                extras=[HarvestObjectExtra(key='status', value='new')])
+            obj.save()
+            ids.append(obj.id)
+        for guid in change:
+            obj = HarvestObject(guid=guid, job=harvest_job,
+                                package_id=guid_to_package_id[guid],
+                                extras=[HarvestObjectExtra(key='status', value='change')])
+            obj.save()
+            ids.append(obj.id)
+        for guid in delete:
+            obj = HarvestObject(guid=guid, job=harvest_job,
+                                package_id=guid_to_package_id[guid],
+                                extras=[HarvestObjectExtra(key='status', value='delete')])
+            model.Session.query(HarvestObject).\
+                  filter_by(guid=guid).\
+                  update({'current': False}, False)
+            obj.save()
+            ids.append(obj.id)
+
+        if len(ids) == 0:
+            self._save_gather_error("No records received from the CSW server", harvest_job)
+            return None
+
+        return ids
+
+
+    def import_stage(self, harvest_object):
+        context = {
+            'model': model,
+            'session': model.Session,
+            'user': self._get_user_name(),
+        }
+
+        log = logging.getLogger(__name__ + '.import')
+        log.debug(f"Import stage for harvest object: {harvest_object.id}")
+
+        if not harvest_object:
+            log.error("No harvest object received")
+            return False
+
+        self._set_source_config(harvest_object.source.config)
+
+        if self.force_import:
+            status = 'change'
+        else:
+            status = self._get_object_extra(harvest_object, 'status')
+
+        # Get the last harvested object (if any)
+        previous_object = model.Session.query(HarvestObject) \
+                          .filter(HarvestObject.guid==harvest_object.guid) \
+                          .filter(HarvestObject.current==True) \
+                          .first()
+
+        if status == 'delete':
+            # Delete package
+            context.update({
+                'ignore_auth': True,
+            })
+            toolkit.get_action('package_delete')(context, {'id': harvest_object.package_id})
+            log.info(f"Deleted package {harvest_object.package_id} with guid {harvest_object.guid}")
+
+            return True
+
+        # Check if it is a non ISO document
+        original_document = self._get_object_extra(harvest_object, 'original_document')
+        original_format = self._get_object_extra(harvest_object, 'original_format')
+        if original_document and original_format:
+            #DEPRECATED use the ISpatialHarvester interface method
+            self.__base_transform_to_iso_called = False
+            content = self.transform_to_iso(original_document, original_format, harvest_object)
+            if not self.__base_transform_to_iso_called:
+                log.warn("Deprecation warning: calling transform_to_iso directly is deprecated. " +
+                         "Please use the ISpatialHarvester interface method instead.")
+
+            for harvester in plugins.PluginImplementations(ISpatialHarvester):
+                content = harvester.transform_to_iso(original_document, original_format, harvest_object)
+
+            if content:
+                harvest_object.content = content
+            else:
+                self._save_object_error("Transformation to ISO failed", harvest_object, 'Import')
+                return False
+        else:
+            if harvest_object.content is None:
+                self._save_object_error(f"Empty content for object {harvest_object.id}", harvest_object, 'Import')
+                return False
+
+            # Validate ISO document
+            is_valid, profile, errors = self._validate_document(harvest_object.content, harvest_object)
+            if not is_valid:
+                # If validation errors were found, import will stop unless
+                # configuration per source or per instance says otherwise
+                continue_import = toolkit.asbool(config.get('ckanext.spatial.harvest.continue_on_validation_errors', False)) or \
+                    self.source_config.get('continue_on_validation_errors')
+                if not continue_import:
+                    return False
+
+        # Parse ISO document
+        try:
+            iso_parser = ISODocument(harvest_object.content)
+            iso_values = iso_parser.read_values()
+        except Exception as e:
+            self._save_object_error(f"Error parsing ISO document for object {harvest_object.id}: {six.text_type(e)}", harvest_object, 'Import')
+            return False
+
+        # Flag previous object as not current anymore
+        if previous_object and not self.force_import:
+            previous_object.current = False
+            previous_object.add()
+
+        # Update GUID with the one on the document
+        iso_guid = iso_values['guid']
+        if iso_guid and harvest_object.guid != iso_guid:
+            # First make sure there already aren't current objects
+            # with the same guid
+            existing_object = model.Session.query(HarvestObject.id) \
+                            .filter(HarvestObject.guid==iso_guid) \
+                            .filter(HarvestObject.current==True) \
+                            .first()
+            if existing_object:
+                self._save_object_error(f"Object {existing_object.id} already has this guid {iso_guid}", harvest_object, 'Import')
+                return False
+
+            harvest_object.guid = iso_guid
+            harvest_object.add()
+
+        # Generate GUID if not present (i.e. it's a manual import)
+        if not harvest_object.guid:
+            m = hashlib.md5()
+            m.update(harvest_object.content.encode('utf8', 'ignore'))
+            harvest_object.guid = m.hexdigest()
+            harvest_object.add()
+
+        # Get document modified date
+        try:
+            metadata_modified_date = dateutil.parser.parse(iso_values['metadata-date'], ignoretz=True)
+        except ValueError:
+            self._save_object_error(f"Could not extract reference date for object {harvest_object.id} ({iso_values['metadata-date']})", harvest_object, 'Import')
+            return False
+
+        harvest_object.metadata_modified_date = metadata_modified_date
+        harvest_object.add()
+
+
+        # Build the package dict
+        package_dict = self.get_package_dict(iso_values, harvest_object)
+        for harvester in plugins.PluginImplementations(ISpatialHarvester):
+            package_dict = harvester.get_package_dict(context, {
+                'package_dict': package_dict,
+                'iso_values': iso_values,
+                'xml_tree': iso_parser.xml_tree,
+                'harvest_object': harvest_object,
+            })
+        if not package_dict:
+            log.error(f"No package dict returned, aborting import for object {harvest_object.id}")
+            return False
+
+        if package_dict == 'skip':
+            log.info(f"Skipping import for object {harvest_object.id}")
+            return 'unchanged'
+
+        # Create / update the package
+        context.update({
+           'extras_as_string': True,
+           'api_version': '2',
+           'return_id_only': True})
+
+        if self._site_user and context['user'] == self._site_user['name']:
+            context['ignore_auth'] = True
+
+
+        # The default package schema does not like Upper case tags
+        tag_schema = logic.schema.default_tags_schema()
+        tag_schema['name'] = [not_empty, six.text_type]
+
+        # Flag this object as the current one
+        harvest_object.current = True
+        harvest_object.add()
+
+        package_name = package_dict['name']
+        package = model.Package.get(package_name)
+
+        # there are cases where a harvested dataset with a name identical to 
+        # that of a record in FIS-Broker, but there is no previous harvest object with
+        # that record's guid. (not sure why that happens. guids changed in FIS-Broker?)
+        # In this case, gather_stage will set `status = 'new'` on the HO.
+        # Here in import_stage, package_create will fail, because
+        # 'Validation Error: That URL is already in use.' (URL is build from name).
+        # So check if package_dict['name'] already exists. If so, change status to
+        # 'change'.
+        if status == 'new' and package:
+            log.info(f"Resource with guid {harvest_object.guid} looks new, but there is a package with the same name: '{package_name}'. Changing that package instead of creating a new one.")
+            status = 'change'
+            harvest_object.package_id = package.as_dict()['id']
+            harvest_object.add()
+
+        # if we cannot find the package by name, maybe we can find it by id
+        if not package:
+            package = model.Package.get(harvest_object.package_id)
+
+        # It can also happen that gather_stage set `status = 'change'`, because there
+        # already is a previous HarvestObject with a guid identical to the one
+        # encountered during gathering. If the dataset that was created through that
+        # HarvestObject no longer exists (it was purged independently from the harvester),
+        # we will get an error (trying to update a non-existing package). In that case,
+        # we need to create a new one.
+        if status == 'change' and not package:
+            # apparently the package was purged, a new one has to be created
+            log.info(f"There is no package named '{package_name}' for guid {harvest_object.guid}, creating a new one.")
+            status = 'new'
+
+
+        if status == 'new':
+            package_schema = logic.schema.default_create_package_schema()
+            package_schema['tags'] = tag_schema
+            context['schema'] = package_schema
+
+            # We need to explicitly provide a package ID, otherwise ckanext-spatial
+            # won't be be able to link the extent to the package.
+            package_dict['id'] = six.text_type(uuid.uuid4())
+            package_schema['id'] = [six.text_type]
+
+            # Save reference to the package on the object
+            harvest_object.package_id = package_dict['id']
+            harvest_object.add()
+            # Defer constraints and flush so the dataset can be indexed with
+            # the harvest object id (on the after_show hook from the harvester
+            # plugin)
+            model.Session.execute('SET CONSTRAINTS harvest_object_package_id_fkey DEFERRED')
+            model.Session.flush()
+
+            try:
+                package_id = toolkit.get_action('package_create')(context, package_dict)
+                log.info('Created new package %s with guid %s', package_id, harvest_object.guid)
+            except toolkit.ValidationError as e:
+                self._save_object_error('Validation Error: %s' % six.text_type(e.error_summary), harvest_object, 'Import')
+                return False
+
+        elif status == 'change':
+
+            # if the package was deleted, make it active again (state in FIS-Broker takes
+            # precedence)
+            if package.state == "deleted":
+                log.info(f"The package named {package_dict['name']} was deleted, activating it again.")
+                package.state = "active"
+
+            # Check if the modified date is more recent
+            if not self.force_import and previous_object and harvest_object.metadata_modified_date <= previous_object.metadata_modified_date:
+
+                # Assign the previous job id to the new object to
+                # avoid losing history
+                harvest_object.harvest_job_id = previous_object.job.id
+                harvest_object.add()
+
+                # Delete the previous object to avoid cluttering the object table
+                previous_object.delete()
+
+                # Reindex the corresponding package to update the reference to the
+                # harvest object
+                if ((config.get('ckanext.spatial.harvest.reindex_unchanged', True) != 'False'
+                    or self.source_config.get('reindex_unchanged') != 'False')
+                    and harvest_object.package_id):
+                    context.update({'validate': False, 'ignore_auth': True})
+                    try:
+                        package_dict = logic.get_action('package_show')(context,
+                            {'id': harvest_object.package_id})
+                    except toolkit.ObjectNotFound:
+                        pass
+                    else:
+                        for extra in package_dict.get('extras', []):
+                            if extra['key'] == 'harvest_object_id':
+                                extra['value'] = harvest_object.id
+                        if package_dict:
+                            package_index = PackageSearchIndex()
+                            package_index.index_package(package_dict)
+
+                log.info(f"Document with GUID {harvest_object.guid} unchanged, skipping...")
+            else:
+                package_schema = logic.schema.default_update_package_schema()
+                package_schema['tags'] = tag_schema
+                context['schema'] = package_schema
+
+                package_dict['id'] = harvest_object.package_id
+                try:
+                    package_id = toolkit.get_action('package_update')(context, package_dict)
+                    log.info(f"Updated package {package_id} with guid {harvest_object.guid}")
+                except toolkit.ValidationError as e:
+                    self._save_object_error(f"Validation Error: {six.text_type(e.error_summary)}", harvest_object, 'Import')
+                    return False
+
+        model.Session.commit()
+
+        return True
+
 
     # IConfigurer
 
