@@ -108,10 +108,18 @@ def extract_license_and_attribution(data_dict):
             except ValueError:
                 LOG.info(f"could not parse as JSON: {restriction}")
 
-    # fix bad DL-DE-BY id, maybe remove eventually?
-    if 'license_id' in license_and_attribution and license_and_attribution['license_id'] == "dl-de-by-2-0":
-        license_and_attribution['license_id'] = "dl-de-by-2.0"
-        LOG.info("fix bad DL-DE-BY id")
+    # internally, we use 'dl-de-by-2.0' as the id for
+    # Datenlizenz Deutschland – Namensnennung – Version 2.0
+    # However, FIS-Broker uses 'dl-by-de/2.0' (as per https://www.dcat-ap.de/def/licenses/).
+    # We could eventually also use dl-by-de/2.0, but for now we need to convert.
+    if 'license_id' in license_and_attribution:
+        old_license_id = license_and_attribution['license_id']
+        new_license_id = "dl-de-by-2.0"
+        if (old_license_id == "dl-de-by-2-0" or
+            old_license_id == "dl-de-/by-2-0" or
+            old_license_id == "dl-by-de/2.0"):
+            license_and_attribution['license_id'] = new_license_id
+        LOG.info(f"replace license_id '{old_license_id}' with '{new_license_id}'")
 
     return license_and_attribution
 
