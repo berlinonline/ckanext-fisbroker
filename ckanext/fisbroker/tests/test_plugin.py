@@ -477,6 +477,10 @@ class TestPlugin(FisbrokerTestBase):
         # name
         assert "nahrstoffversorgung-des-oberbodens-2015-umweltatlas-wfs-65715c6e" == package_dict['name']
 
+        # temporal coverage
+        assert '2015-01-01' == package_dict['extras']['temporal_coverage_from']
+        assert '2015-12-31' == package_dict['extras']['temporal_coverage_to']
+
     def test_import_stage_first_create_new_dataset(self, app, base_context):
         '''Scenario 1: 
             - We're importing a record from CSW.

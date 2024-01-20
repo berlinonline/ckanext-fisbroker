@@ -1015,16 +1015,13 @@ class FisbrokerPlugin(CSWHarvester):
             extras['temporal_granularity'] = "Keine"
             # TODO: can we determine this from the ISO values?
 
-            # temporal_coverage-from
-            # TODO: can we determine this from the ISO values?
-            # shold be iso_values['temporal-extent-begin']
-            # which is derived from:
-            # gmd:identificationInfo/gmd:MD_DataIdentification/gmd:extent/gmd:EX_Extent/gmd:temporalElement
-            # but that doesn't show up anywhere in FIS Broker...
+            # temporal_coverage_from
+            if 'temporal-extent-begin' in extras:
+                extras['temporal_coverage_from'] = extras['temporal-extent-begin']
 
-            # temporal_coverage-to
-            # TODO: can we determine this from the ISO values?
-            # shold be iso_values['temporal-extent-end']
+            # temporal_coverage_to
+            if 'temporal-extent-end' in extras:
+                extras['temporal_coverage_to'] = extras['temporal-extent-end']
 
             # LOG.debug("----- data after get_package_dict -----")
             # LOG.debug(package_dict)
