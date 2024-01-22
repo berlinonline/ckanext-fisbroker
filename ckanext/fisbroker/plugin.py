@@ -42,6 +42,7 @@ from ckanext.fisbroker import blueprint, HARVESTER_ID
 from ckanext.fisbroker.fisbroker_resource_annotator import FISBrokerResourceAnnotator
 import ckanext.fisbroker.helper as helpers
 import ckanext.fisbroker.cli as cli
+from ckanext.fisbroker.csw_client import CswService
 
 from ckanext.spatial.model import ISODocument
 
@@ -822,6 +823,9 @@ class FisbrokerPlugin(CSWHarvester):
         model.Session.commit()
 
         return True
+
+    def _setup_csw_client(self, url):
+        self.csw = CswService(url, self.get_timeout())
 
 
     # IConfigurer
