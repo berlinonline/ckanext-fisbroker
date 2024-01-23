@@ -20,11 +20,10 @@ from ckanext.fisbroker import HARVESTER_ID
 import ckanext.fisbroker.blueprint as blueprint
 from ckanext.fisbroker.blueprint import get_error_dict
 import ckanext.fisbroker.exceptions as fb_exceptions 
-from ckanext.fisbroker.tests import FisbrokerTestBase, base_context, FISBROKER_HARVESTER_CONFIG
+from ckanext.fisbroker.tests import FisbrokerTestBase, base_context, FISBROKER_HARVESTER_CONFIG, FISBROKER_PLUGIN
 from ckanext.fisbroker.tests.mock_fis_broker import INVALID_GUID
 
 LOG = logging.getLogger(__name__)
-FISBROKER_PLUGIN = 'fisbroker'
 
 class TestControllerHelper(object):
     '''Tests for controller code not directly related to reimporting (i.e., helper stuff).'''
@@ -45,7 +44,7 @@ class TestControllerHelper(object):
         assert error_dict['message'] == fb_exceptions.ERROR_MESSAGES[error_code]
         assert error_dict['code'] == error_code
 
-@pytest.mark.ckan_config('ckan.plugins', f"{FISBROKER_PLUGIN} harvest dummyharvest")
+@pytest.mark.ckan_config('ckan.plugins', f"{HARVESTER_ID} {FISBROKER_PLUGIN} harvest dummyharvest")
 @pytest.mark.usefixtures('with_plugins', 'clean_postgis', 'clean_db', 'clean_index')
 class TestReimport(FisbrokerTestBase):
     '''Tests for controller code directly related to reimporting.'''

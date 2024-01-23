@@ -12,7 +12,7 @@ from ckan import model
 
 from ckanext.fisbroker import HARVESTER_ID
 import ckanext.fisbroker.blueprint as blueprint
-import ckanext.fisbroker.plugin as plugin
+from ckanext.fisbroker.fisbroker_harvester import FisbrokerHarvester
 
 from ckanext.harvest.model import HarvestObject, HarvestSource
 
@@ -100,7 +100,7 @@ def list_sources():
     '''
     List all instances of the FIS-Broker harvester.
     '''
-    click.echo("listing all instances of FisbrokerPlugin ...", err=True)
+    click.echo("listing all instances of FisbrokerHarvester ...", err=True)
     sources = _list_sources()
 
     click.echo(json.dumps(sources, indent=JSON_INDENT))
@@ -181,7 +181,7 @@ def last_successful_job(source: str):
         harvest_job = MockHarvestJob()
         harvest_job.source = HarvestSource.get(source)
         harvest_job.id = 'fakeid'
-        last_successful_job = plugin.FisbrokerPlugin.last_error_free_job(harvest_job)
+        last_successful_job = FisbrokerHarvester.last_error_free_job(harvest_job)
         if last_successful_job:
             output[source] = last_successful_job.as_dict()
 

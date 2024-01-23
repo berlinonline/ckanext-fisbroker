@@ -16,8 +16,9 @@ The plugin implements the following core CKAN interfaces:
 - [IConfigurer](https://docs.ckan.org/en/latest/extensions/plugin-interfaces.html#ckan.plugins.interfaces.IConfigurer)
 - [ITemplateHelpers](https://docs.ckan.org/en/latest/extensions/plugin-interfaces.html#ckan.plugins.interfaces.ITemplateHelpers)
 
-It also implements ISpatialHarvester, which is defined in the [ckanext-spatial](https://github.com/ckan/ckanext-spatial) extension.
+It also implements **IHarvester** and **ISpatialHarvester**, which are defined in the [ckanext-harvest](https://github.com/ckan/ckanext-harvest) and [ckanext-spatial](https://github.com/ckan/ckanext-spatial) extensions.
 
+- [IHarvester](https://github.com/ckan/ckanext-harvest#the-harvesting-interface)
 - [ISpatialHarvester](https://docs.ckan.org/projects/ckanext-spatial/en/latest/harvesters.html#customizing-the-harvesters)
 
 ## Requirements

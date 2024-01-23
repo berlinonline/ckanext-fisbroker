@@ -2,10 +2,11 @@
 
 ## Development
 
-- Extract information about temporal coverage from the `temporal-extent-begin` and `temporal-extent-end` fields.
+- Extract information about temporal coverage from the CSW's `temporal-extent-begin` and `temporal-extent-end` fields.
 - Map the license id for DL-DE-BY that FIS-Broker uses to the one we're using internally.
 - Move `gather_stage()`, `fetch_stage()` and `import_stage()` here from [our fork of ckanext-spatial](https://github.com/berlinonline/ckanext-spatial/tree/bo_prs).
 - Move the `CswService` class here from [our fork of ckanext-spatial](https://github.com/berlinonline/ckanext-spatial/tree/bo_prs).
+- Refactor to separate the [ISpatialHarvester](https://docs.ckan.org/projects/ckanext-spatial/en/latest/harvesters.html#customizing-the-harvesters) implementation from the rest of the extension. It now lives in `ckanext.fisbroker.fisbroker_harvester` rather than `ckanext.fisbroker.plugin`.
 
 ## [1.3.2](https://github.com/berlinonline/ckanext-fisbroker/releases/tag/1.3.2)
 

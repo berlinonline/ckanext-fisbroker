@@ -14,14 +14,14 @@ from ckanext.harvest.model import HarvestObject
 
 from ckanext.spatial.tests.conftest import clean_postgis, harvest_setup
 
+from ckanext.fisbroker import HARVESTER_ID
 from ckanext.fisbroker.cli import fisbroker
-from ckanext.fisbroker.plugin import FisbrokerPlugin
-from ckanext.fisbroker.tests import FisbrokerTestBase, base_context, FISBROKER_HARVESTER_CONFIG, WFS_FIXTURE
+from ckanext.fisbroker.fisbroker_harvester import FisbrokerHarvester
+from ckanext.fisbroker.tests import FisbrokerTestBase, base_context, FISBROKER_HARVESTER_CONFIG, WFS_FIXTURE, FISBROKER_PLUGIN
 
 LOG = logging.getLogger(__name__)
-FISBROKER_PLUGIN = 'fisbroker'
 
-@pytest.mark.ckan_config('ckan.plugins', f"{FISBROKER_PLUGIN} harvest dummyharvest")
+@pytest.mark.ckan_config('ckan.plugins', f"{FISBROKER_PLUGIN} {HARVESTER_ID} harvest dummyharvest")
 @pytest.mark.usefixtures('with_plugins', 'clean_postgis', 'clean_db', 'clean_index', 'harvest_setup')
 class TestCli(FisbrokerTestBase):
 
@@ -139,10 +139,10 @@ class TestCli(FisbrokerTestBase):
     ])
     def test_last_successful_job_exists(self, cli, base_context, parameters: list):
         source, job = self._create_source_and_job()
-        object_ids = gather_stage(FisbrokerPlugin(), job)
+        object_ids = gather_stage(FisbrokerHarvester(), job)
         for object_id in object_ids:
             harvest_object = HarvestObject.get(object_id)
-            fetch_and_import_stages(FisbrokerPlugin(), harvest_object)
+            fetch_and_import_stages(FisbrokerHarvester(), harvest_object)
         job.status = 'Finished'
         job.save()
 
@@ -160,10 +160,10 @@ class TestCli(FisbrokerTestBase):
 
     def test_last_successful_job_wrong_source(self, cli, base_context):
         source, job = self._create_source_and_job()
-        object_ids = gather_stage(FisbrokerPlugin(), job)
+        object_ids = gather_stage(FisbrokerHarvester(), job)
         for object_id in object_ids:
             harvest_object = HarvestObject.get(object_id)
-            fetch_and_import_stages(FisbrokerPlugin(), harvest_object)
+            fetch_and_import_stages(FisbrokerHarvester(), harvest_object)
         job.status = 'Finished'
         job.save()
 

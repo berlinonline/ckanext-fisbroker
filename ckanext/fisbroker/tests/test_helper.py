@@ -9,6 +9,7 @@ from ckan.logic import get_action
 from ckan.model.package import Package
 from ckan.tests import factories as ckan_factories
 
+from ckanext.fisbroker import HARVESTER_ID
 from ckanext.fisbroker.helper import (
     normalize_url,
     uniq_resources_by_url,
@@ -18,15 +19,14 @@ from ckanext.fisbroker.helper import (
     fisbroker_guid,
     get_package_object,
 )
-from ckanext.fisbroker.tests import FisbrokerTestBase, base_context, FISBROKER_HARVESTER_CONFIG
+from ckanext.fisbroker.tests import FisbrokerTestBase, base_context, FISBROKER_HARVESTER_CONFIG, FISBROKER_PLUGIN
 from ckanext.spatial.tests.conftest import clean_postgis
 
 LOG = logging.getLogger(__name__)
 GETCAPABILITIES_URL_1 = 'https://fbinter.stadt-berlin.de/fb/wfs/data/senstadt/s01_11_07naehr2015?request=getcapabilities&service=wfs&version=2.0.0'
 GETCAPABILITIES_URL_2 = 'https://fbinter.stadt-berlin.de/fb/wfs/data/senstadt/s01_11_07naehr2015?service=wfs&version=2.0.0&request=GetCapabilities'
-FISBROKER_PLUGIN = 'fisbroker'
 
-@pytest.mark.ckan_config('ckan.plugins', f"{FISBROKER_PLUGIN} harvest")
+@pytest.mark.ckan_config('ckan.plugins', f"{HARVESTER_ID} {FISBROKER_PLUGIN} harvest")
 @pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index')
 class TestHelper(FisbrokerTestBase):
     """Test functionality of ckanext.fisbroker.helper"""
@@ -102,7 +102,7 @@ class TestHelper(FisbrokerTestBase):
             'name': 'fisbroker',
             'url': 'http://127.0.0.1:8999/wfs-open-data.xml',
             'object_id': '65715c6e-bbaf-3def-982b-3b5156272da7',
-            'source_type': 'fisbroker'
+            'source_type': HARVESTER_ID
         }
 
         source1, first_job = self._create_source_and_job(fisbroker_fixture)

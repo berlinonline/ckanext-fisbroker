@@ -24,7 +24,7 @@ from ckanext.harvest.model import (
 from ckanext.harvest.tests import factories as harvest_factories
 
 from ckanext.fisbroker import HARVESTER_ID
-from ckanext.fisbroker.plugin import FisbrokerPlugin
+from ckanext.fisbroker.fisbroker_harvester import FisbrokerHarvester
 from ckanext.fisbroker.tests.mock_fis_broker import start_mock_server, reset_mock_server, VALID_GUID, METADATA_OLD
 from ckanext.fisbroker.tests.xml_file_server import serve
 
@@ -42,9 +42,9 @@ WFS_FIXTURE = {
     'name': 'test-source',
     'url': 'http://127.0.0.1:8999/wfs-open-data.xml',
     'object_id': '65715c6e-bbaf-3def-982b-3b5156272da7',
-    'source_type': 'fisbroker'
+    'source_type': HARVESTER_ID
 }
-
+FISBROKER_PLUGIN = 'fisbroker'
 
 # Start simple HTTP server that serves XML test files
 serve()
@@ -115,7 +115,7 @@ class FisbrokerTestBase(object):
 
     def _run_job_for_single_document(self, harvest_job: HarvestJob, object_id: str)-> HarvestObject:
 
-        harvester = FisbrokerPlugin()
+        harvester = FisbrokerHarvester()
 
         # we circumvent gather_stage() and fetch_stage() and just load the
         # content with a known object_id and create the harvest object:

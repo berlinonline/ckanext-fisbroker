@@ -172,9 +172,9 @@ def reimport_batch(package_ids, context):
 
                 assert obj, obj.content
                 
-                from ckanext.fisbroker.plugin import FisbrokerPlugin
+                from ckanext.fisbroker.fisbroker_harvester import FisbrokerHarvester
 
-                harvester = FisbrokerPlugin()
+                harvester = FisbrokerHarvester()
                 harvester.force_import = True
                 harvester.import_stage(obj)
                 rejection_reason = _dataset_rejected(obj)
