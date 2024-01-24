@@ -2,6 +2,10 @@
 
 ## Development
 
+## [1.4.0](https://github.com/berlinonline/ckanext-fisbroker/releases/tag/1.4.0)
+
+_(2024-01-24)_
+
 - Extract information about temporal coverage from the CSW's `temporal-extent-begin` and `temporal-extent-end` fields.
 - Map the license id for DL-DE-BY that FIS-Broker uses to the one we're using internally.
 - Move `gather_stage()`, `fetch_stage()` and `import_stage()` here from [our fork of ckanext-spatial](https://github.com/berlinonline/ckanext-spatial/tree/bo_prs).
