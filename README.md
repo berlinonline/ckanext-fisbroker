@@ -23,7 +23,7 @@ It also implements **IHarvester** and **ISpatialHarvester**, which are defined i
 
 ## Requirements
 
-This plugin has been tested with CKAN 2.9.8 (which requires Python 3).
+This plugin has been tested with CKAN 2.9.10 (which requires Python 3).
 
 ## Custom Configuration Options
 
@@ -108,7 +108,7 @@ listing all instances of FisbrokerPlugin ...
 
 ## Copying and License
 
-This material is copyright © 2016 – 2023  [BerlinOnline Stadtportal GmbH & Co. KG](https://berlinonline.net).
+This material is copyright © 2016 – 2024  [BerlinOnline Stadtportal GmbH & Co. KG](https://berlinonline.net).
 
 This extension is open and licensed under the GNU Affero General Public License (AGPL) v3.0.
 Its full text may be found at:
