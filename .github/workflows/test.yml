@@ -85,8 +85,8 @@ jobs:
         git clone https://github.com/ckan/ckanext-spatial
         cd ckanext-spatial
         git checkout tags/v2.1.1
-        pip install -e ckanext-spatial
-        pip install -r ckanext-spatial/requirements.txt
+        pip install -e .
+        pip install -r requirements.txt
     - name: Install own requirements
       run: |
         pip install -r dev-requirements.txt
