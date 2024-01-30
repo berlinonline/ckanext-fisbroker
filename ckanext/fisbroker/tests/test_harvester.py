@@ -25,8 +25,7 @@ from ckanext.harvest.model import (
 from ckanext.harvest.tests import factories as harvest_factories
 
 from ckanext.spatial.harvesters.base import SpatialHarvester
-from ckanext.spatial.model import ISODocument
-from ckanext.spatial.tests.conftest import clean_postgis
+from ckanext.spatial.harvested_metadata import ISODocument
 
 from ckanext.fisbroker import HARVESTER_ID
 from ckanext.fisbroker.fisbroker_harvester import (
@@ -49,7 +48,7 @@ LOG = logging.getLogger(__name__)
 
 
 @pytest.mark.ckan_config('ckan.plugins', f"{HARVESTER_ID} {FISBROKER_PLUGIN} harvest")
-@pytest.mark.usefixtures('with_plugins', 'clean_postgis', 'clean_db', 'clean_index')
+@pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index')
 class TestTransformationHelpers(FisbrokerTestBase):
     '''Tests for transformation helper methods used in get_package_dict. To see how CSW documents are mapped
        to ISO, check `ckanext.spatial.model.harvested_metadata.py/ISODocument`.'''
@@ -61,7 +60,7 @@ class TestTransformationHelpers(FisbrokerTestBase):
         with open(xml_filepath, 'rb') as f:
             xml_string_raw = f.read()
 
-        return xml_string_raw
+        return xml_string_raw.decode('utf-8')
 
     def _csw_resource_data_dict(self, dataset_name):
         '''Return an example open data dataset as expected as input
@@ -411,7 +410,7 @@ class TestTransformationHelpers(FisbrokerTestBase):
         assert json.loads(converted[2]['value']) == json.loads(extras_list[2]['value'])
 
 @pytest.mark.ckan_config('ckan.plugins', f"{HARVESTER_ID} {FISBROKER_PLUGIN} harvest")
-@pytest.mark.usefixtures('with_plugins', 'clean_postgis', 'clean_db', 'clean_index')
+@pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index')
 class TestHarvester(FisbrokerTestBase):
     '''Tests for the main harvester class.'''
 

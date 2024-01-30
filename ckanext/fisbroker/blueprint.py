@@ -5,6 +5,7 @@ This module implements the main controller for ckanext-fisbroker.
 
 import datetime
 import logging
+from urllib3.exceptions import ProtocolError
 
 from flask import Blueprint, make_response
 
@@ -16,16 +17,19 @@ import ckan.lib.helpers as h
 from ckan.model import Package, Session
 from ckan.plugins import toolkit
 
-from owslib.csw import CatalogueServiceWeb, namespaces
-from requests.exceptions import RequestException
+from owslib.csw import CatalogueServiceWeb
+
+from requests.exceptions import RequestException, ConnectionError
 
 from ckanext.harvest.model import (
     HarvestJob,
     HarvestObject,
-    HarvestObjectExtra
+    HarvestObjectExtra,
+    HarvestGatherError
 )
 
 from ckanext.fisbroker import HARVESTER_ID
+from ckanext.fisbroker.csw_client import CswService
 from ckanext.fisbroker.exceptions import (
     ERROR_MESSAGES,
     ERROR_DURING_IMPORT,
@@ -152,13 +156,13 @@ def reimport_batch(package_ids, context):
     package_id = None
     reimported_packages = {}
     try:
-        csw = CatalogueServiceWeb(harvester_url)
+        csw = CswService(harvester_url)
         for package_id, fb_guid in ckan_fb_mapping.items():
             # query connector to get resource document
-            csw.getrecordbyid([fb_guid], outputschema=namespaces['gmd'])
+            csw.getrecordbyid([fb_guid])
 
             # show resource document
-            record = csw.records.get(fb_guid, None)
+            record = csw.records().get(fb_guid, None)
             if record:
                 obj = HarvestObject(guid=fb_guid,
                                     job=harvest_job,
@@ -187,16 +191,18 @@ def reimport_batch(package_ids, context):
                 reimported_packages[package_id] = record
 
             else:
+                msg = ERROR_MESSAGES[ERROR_NOT_FOUND_IN_FISBROKER].format(fb_guid)
+                err = HarvestGatherError(message=msg, job=harvest_job)
+                err.save()
                 raise NotFoundInFisbrokerError(package_id, fb_guid)
 
-    except RequestException as error:
+    except (RequestException, ProtocolError, ConnectionError, AttributeError) as error:
         raise NoConnectionError(package_id, harvester_url, str(error.__class__.__name__))
-
-
-    # successfully finish harvest job
-    harvest_job.status = u'Finished'
-    harvest_job.finished = datetime.datetime.utcnow()
-    harvest_job.save()
+    finally:
+        # finish harvest job, both successfully and unsuccessfully
+        harvest_job.status = u'Finished'
+        harvest_job.finished = datetime.datetime.utcnow()
+        harvest_job.save()
 
     return reimported_packages
 

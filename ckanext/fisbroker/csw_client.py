@@ -19,7 +19,7 @@ class CswService(csw_client.CswService):
     """
     Perform various operations on a CSW service
     """
-    from owslib.csw import CatalogueServiceWeb as _Implementation
+    from owslib.catalogue.csw2 import CatalogueServiceWeb as _Implementation
 
     def __init__(self, endpoint=None, timeout=10):
         if endpoint is not None:
@@ -39,7 +39,7 @@ class CswService(csw_client.CswService):
                        keywords=[], limit=None, page=10, outputschema="gmd",
                        startposition=0, cql=None, constraints=[], retries=3,
                        wait_time=5.0, **kw):
-        from owslib.csw import namespaces
+        from owslib.catalogue.csw2 import namespaces
 
         csw = self._ows(**kw)
 
@@ -104,7 +104,7 @@ class CswService(csw_client.CswService):
             kwa["startposition"] = startposition
 
     def getrecordbyid(self, ids=[], esn="full", outputschema="gmd", retries=3, wait_time=5.0, **kw):
-        from owslib.csw import namespaces
+        from owslib.catalogue.csw2 import namespaces
         csw = self._ows(**kw)
         kwa = {
             "esn": esn,
@@ -154,3 +154,7 @@ class CswService(csw_client.CswService):
         record["xml"] = '<?xml version="1.0" encoding="UTF-8"?>\n' + record["xml"]
         record["tree"] = mdtree
         return record
+
+    def records(self):
+        '''Provide access the records attribute of the wrapped CatalogueServiceWeb object.'''
+        return self._ows().records

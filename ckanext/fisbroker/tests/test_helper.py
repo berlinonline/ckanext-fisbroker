@@ -20,7 +20,6 @@ from ckanext.fisbroker.helper import (
     get_package_object,
 )
 from ckanext.fisbroker.tests import FisbrokerTestBase, base_context, FISBROKER_HARVESTER_CONFIG, FISBROKER_PLUGIN
-from ckanext.spatial.tests.conftest import clean_postgis
 
 LOG = logging.getLogger(__name__)
 GETCAPABILITIES_URL_1 = 'https://fbinter.stadt-berlin.de/fb/wfs/data/senstadt/s01_11_07naehr2015?request=getcapabilities&service=wfs&version=2.0.0'

@@ -37,7 +37,7 @@ from ckanext.harvest.model import (
 
 from ckanext.spatial.interfaces import ISpatialHarvester
 from ckanext.spatial.harvesters.base import text_traceback
-from ckanext.spatial.model import ISODocument
+from ckanext.spatial.harvested_metadata import ISODocument
 from ckanext.spatial.harvesters.csw import CSWHarvester
 from ckanext.spatial.validation.validation import BaseValidator
 

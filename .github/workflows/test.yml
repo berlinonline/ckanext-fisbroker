@@ -82,7 +82,9 @@ jobs:
         pip install --no-use-pep517 pyproj==2.6.1
     - name: Install ckanext-spatial
       run: |
-        git clone --branch bo_prs https://github.com/berlinonline/ckanext-spatial
+        git clone https://github.com/ckan/ckanext-spatial
+        cd ckanext-spatial
+        git checkout tags/v2.1.1
         pip install -e ckanext-spatial
         pip install -r ckanext-spatial/requirements.txt
     - name: Install own requirements

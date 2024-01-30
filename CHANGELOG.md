@@ -2,6 +2,12 @@
 
 ## Development
 
+## [1.4.1](https://github.com/berlinonline/ckanext-fisbroker/releases/tag/1.4.1)
+
+_(2024-01-30)_
+
+- Refactor to make `ckanext-fisbroker` compatible with `ckanext-spatial@v2.1.1`.
+
 ## [1.4.0](https://github.com/berlinonline/ckanext-fisbroker/releases/tag/1.4.0)
 
 _(2024-01-24)_

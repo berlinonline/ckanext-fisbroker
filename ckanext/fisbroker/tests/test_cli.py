@@ -12,7 +12,7 @@ from ckan.logic.action.update import package_update
 from ckanext.harvest.queue import gather_stage, fetch_and_import_stages
 from ckanext.harvest.model import HarvestObject
 
-from ckanext.spatial.tests.conftest import clean_postgis, harvest_setup
+from ckanext.spatial.tests.conftest import harvest_setup
 
 from ckanext.fisbroker import HARVESTER_ID
 from ckanext.fisbroker.cli import fisbroker
@@ -22,7 +22,7 @@ from ckanext.fisbroker.tests import FisbrokerTestBase, base_context, FISBROKER_H
 LOG = logging.getLogger(__name__)
 
 @pytest.mark.ckan_config('ckan.plugins', f"{FISBROKER_PLUGIN} {HARVESTER_ID} harvest dummyharvest")
-@pytest.mark.usefixtures('with_plugins', 'clean_postgis', 'clean_db', 'clean_index', 'harvest_setup')
+@pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index', 'harvest_setup')
 class TestCli(FisbrokerTestBase):
 
     def test_list_sources_none(self, cli):

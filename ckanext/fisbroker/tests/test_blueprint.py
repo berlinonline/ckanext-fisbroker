@@ -15,7 +15,6 @@ from ckan.plugins import implements, SingletonPlugin
 from ckan.tests import factories as ckan_factories
 
 from ckanext.harvest.interfaces import IHarvester
-from ckanext.spatial.tests.conftest import clean_postgis
 from ckanext.fisbroker import HARVESTER_ID
 import ckanext.fisbroker.blueprint as blueprint
 from ckanext.fisbroker.blueprint import get_error_dict
@@ -45,7 +44,7 @@ class TestControllerHelper(object):
         assert error_dict['code'] == error_code
 
 @pytest.mark.ckan_config('ckan.plugins', f"{HARVESTER_ID} {FISBROKER_PLUGIN} harvest dummyharvest")
-@pytest.mark.usefixtures('with_plugins', 'clean_postgis', 'clean_db', 'clean_index')
+@pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index')
 class TestReimport(FisbrokerTestBase):
     '''Tests for controller code directly related to reimporting.'''
     _load_plugins = ('dummyharvest', )
