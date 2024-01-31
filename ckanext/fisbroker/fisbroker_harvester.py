@@ -505,7 +505,10 @@ class FisbrokerHarvester(CSWHarvester):
                 self._setup_csw_client(url)
                 break
             except Exception as e:
-                err = f"Error setting up CSW client: {text_traceback()}"
+                try:
+                    err = f"Error setting up CSW client: {text_traceback()}"
+                except Exception as e2:
+                    err = f"Error setting up CSW client, text_traceback() failed ({e2})"
                 if attempt < retries:
                     log.info(err)
                     log.info(f"waiting {wait_time} seconds...")

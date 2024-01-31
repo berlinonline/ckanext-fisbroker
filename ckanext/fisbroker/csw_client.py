@@ -61,22 +61,25 @@ class CswService(csw_client.CswService):
         while True:
             # repeat the request up to [retries] times
             for attempt in range(1, retries + 1):
-                log.info('Making CSW request: getrecords2 %r', kwa)
+                log.info(f"Making CSW request: getrecords2 {kwa}")
+                log.info(f"Attempt #{attempt} of {retries}")
 
                 try:
                     csw.getrecords2(**kwa)
                     if csw.exceptionreport:
-                        err = 'Exceptionreport: %r' % csw.exceptionreport.exceptions
+                        err = f"Exceptionreport: {csw.exceptionreport.exceptions}"
                         raise csw_client.CswError(err)
                     else:
                         break
                 except Exception as e:
-                    err = 'Error getting identifiers: %s' % text_traceback()
+                    try:
+                        err = f"Error getting identifiers: {text_traceback()}"
+                    except Exception as e2:
+                        err = f"Error getting identifiers, text_traceback() failed ({e2})"
                     if attempt < retries:
                         log.info(err)
-                        log.info('waiting %f seconds...' % wait_time)
+                        log.info(f"waiting {wait_time} seconds...")
                         sleep(wait_time)
-                        log.info('Repeating request! (attempt #%d)' % (attempt + 1))
                         continue
                     else:
                         raise csw_client.CswError(err)
@@ -110,25 +113,26 @@ class CswService(csw_client.CswService):
             "esn": esn,
             "outputschema": namespaces[outputschema],
             }
-        # Ordinary Python version's don't support the metadata argument
         for attempt in range(1, retries + 1):
-            log.info('Making CSW request: getrecordbyid %r %r', ids, kwa)
+            log.info(f"Making CSW request: getrecordbyid {ids} {kwa}")
+            log.info(f"Attempt #{attempt} of {retries}")
 
             try:
                 csw.getrecordbyid(ids, **kwa)
                 if csw.exceptionreport:
-                    err = 'Exceptionreport: %r' % \
-                        csw.exceptionreport.exceptions
+                    err = f"Exceptionreport: {csw.exceptionreport.exceptions}"
                     raise csw_client.CswError(err)
                 else:
                     break
             except Exception as e:
-                err = 'Error getting record by id: %s' % text_traceback()
+                try:
+                    err = f"Error getting record by id: {text_traceback()}"
+                except Exception as e2:
+                    err = f"Error getting record by id, text_traceback() failed ({e2})"
                 if attempt < retries:
                     log.info(err)
-                    log.info('Let them catch their breath - wait %f seconds...' % wait_time)
+                    log.info(f"waiting {wait_time} seconds...")
                     sleep(wait_time)
-                    log.info('Repeating request! (attempt #%d)' % (attempt + 1))
                     continue
                 else:
                     raise csw_client.CswError(err)
