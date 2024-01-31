@@ -128,7 +128,7 @@ class CswService(csw_client.CswService):
                 try:
                     err = f"Error getting record by id: {text_traceback()}"
                 except Exception as e2:
-                    err = f"Error getting record by id, text_traceback() failed ({e2})"
+                    err = f"Error getting record by id, text_traceback() failed ({e})"
                 if attempt < retries:
                     log.info(err)
                     log.info(f"waiting {wait_time} seconds...")

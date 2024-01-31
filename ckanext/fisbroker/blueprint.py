@@ -17,8 +17,6 @@ import ckan.lib.helpers as h
 from ckan.model import Package, Session
 from ckan.plugins import toolkit
 
-from owslib.csw import CatalogueServiceWeb
-
 from requests.exceptions import RequestException, ConnectionError
 
 from ckanext.harvest.model import (
@@ -27,6 +25,7 @@ from ckanext.harvest.model import (
     HarvestObjectExtra,
     HarvestGatherError
 )
+from ckanext.spatial.lib.csw_client import CswError
 
 from ckanext.fisbroker import HARVESTER_ID
 from ckanext.fisbroker.csw_client import CswService
@@ -196,7 +195,7 @@ def reimport_batch(package_ids, context):
                 err.save()
                 raise NotFoundInFisbrokerError(package_id, fb_guid)
 
-    except (RequestException, ProtocolError, ConnectionError, AttributeError) as error:
+    except (RequestException, ProtocolError, ConnectionError, AttributeError, CswError) as error:
         raise NoConnectionError(package_id, harvester_url, str(error.__class__.__name__))
     finally:
         # finish harvest job, both successfully and unsuccessfully

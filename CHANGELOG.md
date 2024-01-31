@@ -2,7 +2,7 @@
 
 ## Development
 
-- Catch Exceptions raised by a failing `text_traceback()` during error handling for CSW communication.
+- Improved Exception handling in several places.
 - More F-Strings.
 
 ## [1.4.1](https://github.com/berlinonline/ckanext-fisbroker/releases/tag/1.4.1)
