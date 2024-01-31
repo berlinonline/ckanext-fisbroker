@@ -2,6 +2,10 @@
 
 ## Development
 
+## [1.4.2](https://github.com/berlinonline/ckanext-fisbroker/releases/tag/1.4.2)
+
+_(2024-01-31)_
+
 - Improved Exception handling in several places.
 - More F-Strings.
 
