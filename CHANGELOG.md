@@ -3,6 +3,7 @@
 ## Development
 
 - Remove travis-requirements.txt.
+- Adjust log-levels.
 
 ## [1.4.2](https://github.com/berlinonline/ckanext-fisbroker/releases/tag/1.4.2)
 

@@ -93,12 +93,12 @@ class MockFISBroker(BaseHTTPRequestHandler):
                     # response will be served, leading to an error in the harvest job.
                     # This can be used for tests that somehow involve errored harvest jobs.
                     record_id = query.get('id')
-                    LOG.debug(f"this is a GetRecordById request: {MockFISBroker.count_get_records}")
+                    LOG.info(f"this is a GetRecordById request: {MockFISBroker.count_get_records}")
                     if record_id:
                         record_id = record_id[0]
                         if record_id not in RESPONSES['records']:
                             record_id = f"{record_id}_{str(MockFISBroker.count_get_records).rjust(2, '0')}"
-                        LOG.debug(f"looking for {record_id}")
+                        LOG.info(f"looking for {record_id}")
                         if record_id == "cannot_connect_00":
                             # mock a timeout happening during a GetRecordById request
                             raise Timeout()
@@ -145,7 +145,7 @@ class MockFISBroker(BaseHTTPRequestHandler):
         response_content = "<foo></foo>"
         if csw_request == "{http://www.opengis.net/cat/csw/2.0.2}GetRecords":
             MockFISBroker.count_get_records += 1
-            LOG.debug(f"this is a GetRecords request: {MockFISBroker.count_get_records}")
+            LOG.info(f"this is a GetRecords request: {MockFISBroker.count_get_records}")
             response_content = RESPONSES['csw_getrecords_01']
             response_code = 200
         else:

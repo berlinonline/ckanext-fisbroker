@@ -744,7 +744,7 @@ class TestHarvester(FisbrokerTestBase):
         job_a.status = 'Finished'
         job_a.save()
 
-        LOG.debug("successful job done ...")
+        LOG.info("successful job done ...")
 
         # do an unsuccessful job
         # This harvest job should fail, because the mock FIS-broker will look for a different
@@ -758,7 +758,7 @@ class TestHarvester(FisbrokerTestBase):
         job_b.status = 'Finished'
         job_b.save()
 
-        LOG.debug("unsuccessful job done ...")
+        LOG.info("unsuccessful job done ...")
 
         # reset the mock server's counter
         reset_mock_server(1)
@@ -771,7 +771,7 @@ class TestHarvester(FisbrokerTestBase):
             extra_environ={'REMOTE_USER': base_context['user'].encode('ascii')}
         )
 
-        LOG.debug("reimport job done ...")
+        LOG.info("reimport job done ...")
 
         new_job = self._create_job(source.id)
         last_error_free_job = FisbrokerHarvester().last_error_free_job(new_job)

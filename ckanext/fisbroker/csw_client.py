@@ -13,7 +13,7 @@ from owslib.fes import PropertyIsEqualTo, SortBy, SortProperty
 import ckanext.spatial.lib.csw_client as csw_client
 from ckanext.spatial.harvesters.base import text_traceback
 
-log = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 
 class CswService(csw_client.CswService):
     """
@@ -61,8 +61,8 @@ class CswService(csw_client.CswService):
         while True:
             # repeat the request up to [retries] times
             for attempt in range(1, retries + 1):
-                log.info(f"Making CSW request: getrecords2 {kwa}")
-                log.info(f"Attempt #{attempt} of {retries}")
+                LOG.info(f"Making CSW request: getrecords2 {kwa}")
+                LOG.info(f"Attempt #{attempt} of {retries}")
 
                 try:
                     csw.getrecords2(**kwa)
@@ -77,8 +77,8 @@ class CswService(csw_client.CswService):
                     except Exception as e2:
                         err = f"Error getting identifiers, text_traceback() failed ({e2})"
                     if attempt < retries:
-                        log.info(err)
-                        log.info(f"waiting {wait_time} seconds...")
+                        LOG.info(err)
+                        LOG.info(f"waiting {wait_time} seconds...")
                         sleep(wait_time)
                         continue
                     else:
@@ -114,8 +114,8 @@ class CswService(csw_client.CswService):
             "outputschema": namespaces[outputschema],
             }
         for attempt in range(1, retries + 1):
-            log.info(f"Making CSW request: getrecordbyid {ids} {kwa}")
-            log.info(f"Attempt #{attempt} of {retries}")
+            LOG.info(f"Making CSW request: getrecordbyid {ids} {kwa}")
+            LOG.info(f"Attempt #{attempt} of {retries}")
 
             try:
                 csw.getrecordbyid(ids, **kwa)
@@ -130,8 +130,8 @@ class CswService(csw_client.CswService):
                 except Exception as e2:
                     err = f"Error getting record by id, text_traceback() failed ({e})"
                 if attempt < retries:
-                    log.info(err)
-                    log.info(f"waiting {wait_time} seconds...")
+                    LOG.info(err)
+                    LOG.info(f"waiting {wait_time} seconds...")
                     sleep(wait_time)
                     continue
                 else:

@@ -281,7 +281,7 @@ class FisbrokerHarvester(CSWHarvester):
         import_since = self.source_config['import_since']
         if import_since == 'last_error_free':
             last_error_free_job = self.last_error_free_job(harvest_job)
-            LOG.debug('Last error-free job: %r', last_error_free_job)
+            LOG.info('Last error-free job: %r', last_error_free_job)
             if last_error_free_job:
                 gather_time = (last_error_free_job.gather_started +
                                timedelta(hours=self.get_timedelta()))
@@ -374,8 +374,8 @@ class FisbrokerHarvester(CSWHarvester):
         return CSWHarvester.validate_config(self, config)
 
     def gather_stage(self, harvest_job):
-        log = logging.getLogger(__name__ + '.CSW.gather')
-        log.debug(f"FisbrokerPlugin gather_stage for job: {harvest_job}")
+        LOG = logging.getLogger(__name__ + '.CSW.gather')
+        LOG.info(f"FisbrokerPlugin gather_stage for job: {harvest_job}")
         # Get source URL
         url = harvest_job.source.url
 
@@ -384,7 +384,7 @@ class FisbrokerHarvester(CSWHarvester):
         try:
             self._setup_csw_client(url)
         except Exception as e:
-            log.debug(f"Error contacting the CSW server: {e}")
+            LOG.error(f"Error contacting the CSW server: {e}")
             self._save_gather_error(f"Error contacting the CSW server: {e}", harvest_job)
             return None
 
@@ -406,9 +406,9 @@ class FisbrokerHarvester(CSWHarvester):
             for identifier in self.csw.getidentifiers(page=10, outputschema=self.output_schema(),
                                                       cql=cql, constraints=constraints):
                 try:
-                    log.info(f"Got identifier {identifier} from the CSW")
+                    LOG.info(f"Got identifier {identifier} from the CSW")
                     if identifier is None:
-                        log.error(f"CSW returned identifier {identifier}, skipping...")
+                        LOG.error(f"CSW returned identifier {identifier}, skipping...")
                         continue
 
                     guid_set.add(identifier)
@@ -421,7 +421,7 @@ class FisbrokerHarvester(CSWHarvester):
         # first get the (date)constrained set of identifiers,
         # to figure what was added and/or changed
         # only those identifiers will be fetched
-        log.debug(f"Starting gathering for {url} (constrained)")
+        LOG.info(f"Starting gathering for {url} (constrained)")
 
         try:
             constraints = self.get_constraints(harvest_job)
@@ -429,15 +429,15 @@ class FisbrokerHarvester(CSWHarvester):
 
             # then get the complete set of identifiers, to figure out
             # what was deleted
-            log.debug(f"Starting gathering for {url} (unconstrained)")
+            LOG.info(f"Starting gathering for {url} (unconstrained)")
             guids_in_harvest_complete = set()
             if (constraints == []):
-                log.debug("There were no constraints, so GUIDS(unconstrained) == GUIDs(constrained)")
+                LOG.info("There were no constraints, so GUIDS(unconstrained) == GUIDs(constrained)")
                 guids_in_harvest_complete = guids_in_harvest_constrained
             else:
                 guids_in_harvest_complete = get_identifiers()
         except Exception as e:
-            log.error(f"Exception: {text_traceback()}")
+            LOG.error(f"Exception: {text_traceback()}")
             self._save_gather_error(
                 f"Error gathering the identifiers from the CSW server [{str(e)}]", harvest_job)
             return None
@@ -454,9 +454,9 @@ class FisbrokerHarvester(CSWHarvester):
         # (constrained) harvest
         change = guids_in_db & guids_in_harvest_constrained
 
-        log.debug(f"|new GUIDs|: {len(new)}")
-        log.debug(f"|deleted GUIDs|: {len(delete)}")
-        log.debug(f"|changed GUIDs|: {len(change)}")
+        LOG.info(f"|new GUIDs|: {len(new)}")
+        LOG.info(f"|deleted GUIDs|: {len(delete)}")
+        LOG.info(f"|changed GUIDs|: {len(change)}")
 
         ids = []
         for guid in new:
@@ -495,13 +495,13 @@ class FisbrokerHarvester(CSWHarvester):
             # No need to fetch anything, just pass to the import stage
             return True
 
-        log = logging.getLogger(__name__ + '.CSW.fetch')
-        log.debug(f"CswHarvester fetch_stage for object: {harvest_object.id}")
+        LOG = logging.getLogger(__name__ + '.CSW.fetch')
+        LOG.info(f"CswHarvester fetch_stage for object: {harvest_object.id}")
 
         url = harvest_object.source.url
         for attempt in range(1, retries + 1):
             try:
-                log.info(f"Setting up CSW client: Attempt #{attempt} of {retries}")
+                LOG.info(f"Setting up CSW client: Attempt #{attempt} of {retries}")
                 self._setup_csw_client(url)
                 break
             except Exception as e:
@@ -510,10 +510,10 @@ class FisbrokerHarvester(CSWHarvester):
                 except Exception as e2:
                     err = f"Error setting up CSW client, text_traceback() failed ({e2})"
                 if attempt < retries:
-                    log.info(err)
-                    log.info(f"waiting {wait_time} seconds...")
+                    LOG.info(err)
+                    LOG.info(f"waiting {wait_time} seconds...")
                     sleep(wait_time)
-                    log.info(f"Repeating request! (attempt #{(attempt + 1)})")
+                    LOG.info(f"Repeating request! (attempt #{(attempt + 1)})")
                     continue
                 else:
                     self._save_object_error(f"Error setting up CSW client: {e}",
@@ -543,7 +543,7 @@ class FisbrokerHarvester(CSWHarvester):
             self._save_object_error(f"Error saving the harvest object for GUID {identifier} [{e}]", harvest_object)
             return False
 
-        log.debug(f"XML content saved (len {len(record['xml'])})")
+        LOG.info(f"XML content saved (len {len(record['xml'])})")
         return True
 
     def import_stage(self, harvest_object):
@@ -553,11 +553,11 @@ class FisbrokerHarvester(CSWHarvester):
             'user': self._get_user_name(),
         }
 
-        log = logging.getLogger(__name__ + '.import')
-        log.debug(f"Import stage for harvest object: {harvest_object.id}")
+        LOG = logging.getLogger(__name__ + '.import')
+        LOG.info(f"Import stage for harvest object: {harvest_object.id}")
 
         if not harvest_object:
-            log.error("No harvest object received")
+            LOG.error("No harvest object received")
             return False
 
         self._set_source_config(harvest_object.source.config)
@@ -579,7 +579,7 @@ class FisbrokerHarvester(CSWHarvester):
                 'ignore_auth': True,
             })
             toolkit.get_action('package_delete')(context, {'id': harvest_object.package_id})
-            log.info(f"Deleted package {harvest_object.package_id} with guid {harvest_object.guid}")
+            LOG.info(f"Deleted package {harvest_object.package_id} with guid {harvest_object.guid}")
 
             return True
 
@@ -591,7 +591,7 @@ class FisbrokerHarvester(CSWHarvester):
             self.__base_transform_to_iso_called = False
             content = self.transform_to_iso(original_document, original_format, harvest_object)
             if not self.__base_transform_to_iso_called:
-                log.warn("Deprecation warning: calling transform_to_iso directly is deprecated. " +
+                LOG.warn("Deprecation warning: calling transform_to_iso directly is deprecated. " +
                          "Please use the ISpatialHarvester interface method instead.")
 
             for harvester in plugins.PluginImplementations(ISpatialHarvester):
@@ -674,11 +674,11 @@ class FisbrokerHarvester(CSWHarvester):
                 'harvest_object': harvest_object,
             })
         if not package_dict:
-            log.error(f"No package dict returned, aborting import for object {harvest_object.id}")
+            LOG.error(f"No package dict returned, aborting import for object {harvest_object.id}")
             return False
 
         if package_dict == 'skip':
-            log.info(f"Skipping import for object {harvest_object.id}")
+            LOG.info(f"Skipping import for object {harvest_object.id}")
             return 'unchanged'
 
         # Create / update the package
@@ -711,7 +711,7 @@ class FisbrokerHarvester(CSWHarvester):
         # So check if package_dict['name'] already exists. If so, change status to
         # 'change'.
         if status == 'new' and package:
-            log.info(f"Resource with guid {harvest_object.guid} looks new, but there is a package with the same name: '{package_name}'. Changing that package instead of creating a new one.")
+            LOG.info(f"Resource with guid {harvest_object.guid} looks new, but there is a package with the same name: '{package_name}'. Changing that package instead of creating a new one.")
             status = 'change'
             harvest_object.package_id = package.as_dict()['id']
             harvest_object.add()
@@ -728,7 +728,7 @@ class FisbrokerHarvester(CSWHarvester):
         # we need to create a new one.
         if status == 'change' and not package:
             # apparently the package was purged, a new one has to be created
-            log.info(f"There is no package named '{package_name}' for guid {harvest_object.guid}, creating a new one.")
+            LOG.info(f"There is no package named '{package_name}' for guid {harvest_object.guid}, creating a new one.")
             status = 'new'
 
 
@@ -753,7 +753,7 @@ class FisbrokerHarvester(CSWHarvester):
 
             try:
                 package_id = toolkit.get_action('package_create')(context, package_dict)
-                log.info('Created new package %s with guid %s', package_id, harvest_object.guid)
+                LOG.info('Created new package %s with guid %s', package_id, harvest_object.guid)
             except toolkit.ValidationError as e:
                 self._save_object_error('Validation Error: %s' % six.text_type(e.error_summary), harvest_object, 'Import')
                 return False
@@ -763,7 +763,7 @@ class FisbrokerHarvester(CSWHarvester):
             # if the package was deleted, make it active again (state in FIS-Broker takes
             # precedence)
             if package.state == "deleted":
-                log.info(f"The package named {package_dict['name']} was deleted, activating it again.")
+                LOG.info(f"The package named {package_dict['name']} was deleted, activating it again.")
                 package.state = "active"
 
             # Check if the modified date is more recent
@@ -796,7 +796,7 @@ class FisbrokerHarvester(CSWHarvester):
                             package_index = PackageSearchIndex()
                             package_index.index_package(package_dict)
 
-                log.info(f"Document with GUID {harvest_object.guid} unchanged, skipping...")
+                LOG.info(f"Document with GUID {harvest_object.guid} unchanged, skipping...")
             else:
                 package_schema = logic.schema.default_update_package_schema()
                 package_schema['tags'] = tag_schema
@@ -805,7 +805,7 @@ class FisbrokerHarvester(CSWHarvester):
                 package_dict['id'] = harvest_object.package_id
                 try:
                     package_id = toolkit.get_action('package_update')(context, package_dict)
-                    log.info(f"Updated package {package_id} with guid {harvest_object.guid}")
+                    LOG.info(f"Updated package {package_id} with guid {harvest_object.guid}")
                 except toolkit.ValidationError as e:
                     self._save_object_error(f"Validation Error: {six.text_type(e.error_summary)}", harvest_object, 'Import')
                     return False
@@ -824,7 +824,7 @@ class FisbrokerHarvester(CSWHarvester):
         '''Implementation of ckanext.spatial.interfaces.ISpatialHarvester.get_validators().
         https://github.com/ckan/ckanext-spatial/blob/master/ckanext/spatial/interfaces.py
         '''
-        LOG.debug("--------- get_validators ----------")
+        LOG.info("--------- get_validators ----------")
         return [AlwaysValid]
 
     def get_package_dict(self, context, data_dict):
@@ -840,7 +840,7 @@ class FisbrokerHarvester(CSWHarvester):
             if harvest_object:
                 harvest_object.extras.append(HarvestObjectExtra(key='error',value=json.dumps(error_dict)))
 
-        LOG.debug("--------- get_package_dict ----------")
+        LOG.info("--------- get_package_dict ----------")
 
         if hasattr(data_dict, '__getitem__'):
 
@@ -852,17 +852,17 @@ class FisbrokerHarvester(CSWHarvester):
 
             # checking if marked for Open Data
             if not marked_as_opendata(data_dict):
-                LOG.debug("no 'opendata' tag, skipping dataset ...")
+                LOG.info("no 'opendata' tag, skipping dataset ...")
                 remember_error(harvest_object, {'code': 1, 'description': 'not tagged as open data'})
                 return 'skip'
-            LOG.debug("this is tagged 'opendata', continuing ...")
+            LOG.info("this is tagged 'opendata', continuing ...")
 
             # we're only interested in service resources
             if not marked_as_service_resource(data_dict):
-                LOG.debug("this is not a service resource, skipping dataset ...")
+                LOG.info("this is not a service resource, skipping dataset ...")
                 remember_error(harvest_object, {'code': 2, 'description': 'not a service resource'})
                 return 'skip'
-            LOG.debug("this is a service resource, continuing ...")
+            LOG.info("this is a service resource, continuing ...")
 
             extras = self.extras_dict(package_dict['extras'])
 
@@ -980,7 +980,7 @@ class FisbrokerHarvester(CSWHarvester):
             if 'temporal-extent-end' in extras:
                 extras['temporal_coverage_to'] = extras['temporal-extent-end']
 
-            # LOG.debug("----- data after get_package_dict -----")
+            # LOG.info("----- data after get_package_dict -----")
             # LOG.debug(package_dict)
 
             # extras
@@ -988,7 +988,7 @@ class FisbrokerHarvester(CSWHarvester):
 
             return package_dict
         else:
-            LOG.debug('calling get_package_dict on CSWHarvester')
+            LOG.info('calling get_package_dict on CSWHarvester')
             return CSWHarvester.get_package_dict(self, context, data_dict)
 
     @classmethod
