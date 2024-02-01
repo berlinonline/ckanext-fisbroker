@@ -2,6 +2,8 @@
 
 ## Development
 
+- Remove travis-requirements.txt.
+
 ## [1.4.2](https://github.com/berlinonline/ckanext-fisbroker/releases/tag/1.4.2)
 
 _(2024-01-31)_
