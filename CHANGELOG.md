@@ -4,10 +4,10 @@
 
 ## [1.4.3](https://github.com/berlinonline/ckanext-fisbroker/releases/tag/1.4.3)
 
-_(2024-01-31)_
+_(2024-02-01)_
 
-- Remove travis-requirements.txt.
 - Adjust log-levels.
+- Remove `travis-requirements.txt`.
 
 ## [1.4.2](https://github.com/berlinonline/ckanext-fisbroker/releases/tag/1.4.2)
 
