@@ -7,7 +7,7 @@ import datetime
 import logging
 from urllib3.exceptions import ProtocolError
 
-from flask import Blueprint, make_response
+from flask import Blueprint, make_response, redirect
 
 # from ckan.common import OrderedDict, _, c, request, response, config
 from ckan import model
@@ -75,6 +75,31 @@ def get_error_dict(error_code):
     #     # avoid status_code_redirect intercepting error responses
     #     environ['pylons.status_code_redirect'] = True
     #     return base.BaseController.__call__(self, environ, start_response)
+
+def open_csw_record(package_id):
+    '''Open the full CSW record for `package_id`.'''
+
+    package = Package.get(package_id)
+
+    if not package:
+        raise PackageIdDoesNotExistError(package_id)
+
+    if not dataset_was_harvested(package):
+        raise PackageNotHarvestedError(package_id)
+
+    harvester = harvester_for_package(package)
+    harvester_url = harvester.url
+    harvester_type = harvester.type
+    if not harvester_type == HARVESTER_ID:
+        raise PackageNotHarvestedInFisbrokerError(package_id)
+
+    fb_guid = fisbroker_guid(package)
+    if not fb_guid:
+        raise NoFisbrokerIdError(package_id)
+
+    url = f"{harvester_url}/?service=CSW&version=2.0.2&request=GetRecordById&outputschema=http://www.isotc211.org/2005/gmd&elementsetname=full&ID={fb_guid}"
+
+    return redirect(url, code=307)
 
 def reimport_through_browser(package_id):
     '''Initiate the reimport action through the browser (signified by
@@ -299,3 +324,5 @@ reimportapi.add_url_rule(u'/api/harvest/reimport',
                            methods=['GET', 'POST'], view_func=reimport_through_api)
 reimportapi.add_url_rule(u'/dataset/<package_id>/reimport',
                            methods=['GET'], view_func=reimport_through_browser)
+reimportapi.add_url_rule(u'/dataset/<package_id>/csw_record',
+                           methods=['GET'], view_func=open_csw_record)

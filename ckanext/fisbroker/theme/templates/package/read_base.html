@@ -4,6 +4,8 @@
   {% set package_object = h.berlin_package_object(pkg) %}
   {% if h.check_access('package_update', {'id':pkg.id }) and h.berlin_is_fisbroker_package(package_object) %}
     {% if h.berlin_fisbroker_guid(package_object) %}
+        <a class="btn btn-default" href="{{ url_for('reimportapi.open_csw_record', package_id=pkg.id) }}" target="_blank"><i
+            class="fa fa-external-link"></i> Open CSW record</a>
         {% link_for _('Reimport'), named_route='reimportapi.reimport_through_browser', package_id=pkg.id, class_='btn btn-default', icon='cloud-download' %}
     {% endif %}
   {% endif %}

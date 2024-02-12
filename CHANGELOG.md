@@ -2,6 +2,8 @@
 
 ## Development
 
+- Add a button to open full CSW record in FIS-Broker.
+
 ## [1.4.3](https://github.com/berlinonline/ckanext-fisbroker/releases/tag/1.4.3)
 
 _(2024-02-01)_
