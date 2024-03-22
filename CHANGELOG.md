@@ -3,6 +3,7 @@
 ## Development
 
 - Add a button to open full CSW record in FIS-Broker.
+- Add a link to the service's preview graphic in the newly introduced `preview_image` metadata field (if any), instead of adding the image as markup to the `notes`.
 
 ## [1.4.3](https://github.com/berlinonline/ckanext-fisbroker/releases/tag/1.4.3)
 
