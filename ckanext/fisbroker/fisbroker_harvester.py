@@ -185,6 +185,22 @@ def extract_url(resources):
 
     return url
 
+def extract_preview_image(data_dict: dict) -> str:
+    '''If the dataset's ISO values contain a preview image, return its URL. Else return None.'''
+
+    iso_values = data_dict['iso_values']
+
+    preview_graphics = iso_values.get("browse-graphic", [])
+    for preview_graphic in preview_graphics:
+        preview_graphic_title = preview_graphic.get('description', None)
+        if preview_graphic_title == "Vorschaugrafik":
+            preview_graphic_path = preview_graphic.get('file', None)
+            if preview_graphic_path:
+                return preview_graphic_path
+
+    return None
+
+
 def extract_preview_markup(data_dict):
     '''If the dataset's ISO values contain a preview image, generate markdown
        for that and return. Else return None.'''
@@ -934,10 +950,12 @@ class FisbrokerHarvester(CSWHarvester):
             package_dict['url'] = extract_url(package_dict['resources'])
 
             # Preview graphic
-            preview_markup = extract_preview_markup(data_dict)
-            if preview_markup:
-                preview_markup = "\n\n" + preview_markup
-                package_dict['notes'] += preview_markup
+            extras['preview_image'] = extract_preview_image(data_dict)
+
+            # preview_markup = extract_preview_markup(data_dict)
+            # if preview_markup:
+            #     preview_markup = "\n\n" + preview_markup
+            #     package_dict['notes'] += preview_markup
 
             # title
             package_dict['title'] = generate_title(data_dict)

@@ -467,8 +467,8 @@ class TestHarvester(FisbrokerTestBase):
         # url
         assert package_dict['url'] == "https://fbinter.stadt-berlin.de/fb?loginkey=alphaDataStart&alphaDataId=s01_11_07naehr2015@senstadt"
 
-        # preview graphic - check if description contains something that looks like one
-        assert "![Vorschaugrafik zu Datensatz 'Nährstoffversorgung des Oberbodens 2015 (Umweltatlas)'](https://fbinter.stadt-berlin.de/fb_daten/vorschau/sachdaten/svor_default.gif)" in package_dict['notes']
+        # preview graphic - check that 'preview_image' has the correct value
+        assert "https://fbinter.stadt-berlin.de/fb_daten/vorschau/sachdaten/svor_default.gif" == package_dict['extras']['preview_image']
 
         # title
         assert "Nährstoffversorgung des Oberbodens 2015 (Umweltatlas) - [WFS]" == package_dict['title']
