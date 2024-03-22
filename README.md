@@ -49,6 +49,13 @@ Clicking will trigger a reimport job for that dataset.
 
 ![Screenshot eines Datensatzes "Schutzgebiete nach Naturschutzrecht" im Datenregister, mit rot hervorgehobenem Reimport-Button](image/reimport_button.png)
 
+### "Open CSW Record"-Button
+
+Every dataset that was harvested by the FIS-Broker Harvester has a **Open CSW Record** button next to the **Reimport** button in the upper right-hand corner of the dataset page.
+Clicking will open the full CSW record for this dataset on its original server.
+
+![Screenshot eines Datensatzes "Schutzgebiete nach Naturschutzrecht" im Datenregister, mit rot hervorgehobenem "Open CSW Record"-Button](image/open_csw_record_button.png)
+
 ### Command Line Interface
 
 The plugin also defines a `fisbroker` command for the `ckan` cli tool, to list or reimport one or more datasets, as well as some other tasks.
