@@ -184,10 +184,11 @@ class TestCli(FisbrokerTestBase):
 
         assert result.exit_code == 0
         result_data = json.loads(result.stdout)
-        assert len(result_data) == 1
-        assert list(result_data.keys())[0] == dataset_id
-        assert 'fisbroker_guid' in result_data[dataset_id]
-        assert 'title' in result_data[dataset_id]
+        result_datasets = result_data['datasets']
+        assert len(result_datasets) == 1
+        assert list(result_datasets.keys())[0] == dataset_id
+        assert 'fisbroker_guid' in result_datasets[dataset_id]
+        assert 'title' in result_datasets[dataset_id]
 
     @pytest.mark.parametrize("num_datasets", [ 1, 3, 5])
     def test_reimport_cli_one_source(self, cli, base_context, num_datasets: int):
@@ -199,8 +200,9 @@ class TestCli(FisbrokerTestBase):
 
         assert result.exit_code == 0
         result_data = json.loads(result.stdout)
-        assert len(result_data) == num_datasets
-        for ckan_id, metadata in result_data.items():
+        result_datasets = result_data['datasets']
+        assert len(result_datasets) == num_datasets
+        for ckan_id, metadata in result_datasets.items():
             assert 'fisbroker_guid' in metadata
             assert 'title' in metadata
 
@@ -220,8 +222,9 @@ class TestCli(FisbrokerTestBase):
 
         assert result.exit_code == 0
         result_data = json.loads(result.stdout)
-        assert len(result_data) == num_datasets
-        for ckan_id, metadata in result_data.items():
+        result_datasets = result_data['datasets']
+        assert len(result_datasets) == num_datasets
+        for ckan_id, metadata in result_datasets.items():
             assert 'fisbroker_guid' in metadata
             assert 'title' in metadata
 

@@ -13,6 +13,7 @@ from ckan import model
 from ckanext.fisbroker import HARVESTER_ID
 import ckanext.fisbroker.blueprint as blueprint
 from ckanext.fisbroker.fisbroker_harvester import FisbrokerHarvester
+from ckanext.fisbroker.exceptions import NotFoundInFisbrokerError
 
 from ckanext.harvest.model import HarvestObject, HarvestSource
 
@@ -74,11 +75,19 @@ def _list_packages(source_id: str, offset: int = 0, limit: int = -1):
 def _reimport_dataset(dataset_ids, context):
     '''Reimport all datasets in dataset_ids.'''
 
-    reimported_packages = blueprint.reimport_batch(dataset_ids, context)
+    result = {
+        'errors': [],
+        'datasets': {}
+    }
 
-    result = {}
+
+    try:
+        reimported_packages = blueprint.reimport_batch(dataset_ids, context)
+    except NotFoundInFisbrokerError as e:
+        result['errors'].append(str(e))
+
     for package_id, record in reimported_packages.items():
-        result[package_id] = {
+        result['datasets'][package_id] = {
             'fisbroker_guid': record.identifier ,
             'title': record.identification.title
         }
