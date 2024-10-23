@@ -1031,10 +1031,11 @@ class FisbrokerHarvester(CSWHarvester):
                 continue
             for obj in job.objects:
                 if obj.current is False and \
-                        obj.report_status != 'not modified':
-                    # unsuccessful, so go onto the next job
+                        obj.report_status not in(['not modified', 'deleted']):
+                    # this job is not error_free, so go onto the next job
                     break
             else:
+                # there was no break in the for-loop
                 return job
 
 
