@@ -2,6 +2,10 @@
 
 ## Development
 
+## [1.4.5](https://github.com/berlinonline/ckanext-fisbroker/releases/tag/1.4.5)
+
+_(2024-10-23)_
+
 - Change BerlinOnline company name to "BerlinOnline GmbH".
 - Previously, `last_error_free_job()` would mark jobs with harvest objects with `report_status == 'deleted'` as having an error.
 This is fixed now, `deleted` is accepted as well as `not_modified`.
