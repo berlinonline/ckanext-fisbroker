@@ -2,6 +2,8 @@
 
 ## Development
 
+- Change BerlinOnline company name to "BerlinOnline GmbH".
+
 ## [1.4.4](https://github.com/berlinonline/ckanext-fisbroker/releases/tag/1.4.4)
 
 _(2024-03-22)_
