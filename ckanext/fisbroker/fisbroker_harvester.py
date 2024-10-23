@@ -1015,16 +1015,14 @@ class FisbrokerHarvester(CSWHarvester):
            ckanext.harvest.harvesters.base.HarvesterBase to filter out
            jobs that were created by a reimport action.'''
 
-        jobs = \
-            model.Session.query(HarvestJob) \
-                 .filter(HarvestJob.source == harvest_job.source) \
-                 .filter(HarvestJob.gather_started != None) \
-                 .filter(HarvestJob.status == 'Finished') \
-                 .filter(HarvestJob.id != harvest_job.id) \
-                 .filter(
-                     ~exists().where(
-                         HarvestGatherError.harvest_job_id == HarvestJob.id)) \
-                 .order_by(HarvestJob.gather_started.desc())
+        jobs = (model.Session.query(HarvestJob)
+            .filter(HarvestJob.source == harvest_job.source)
+            .filter(HarvestJob.gather_started != None)
+            .filter(HarvestJob.status == 'Finished')
+            .filter(HarvestJob.id != harvest_job.id)
+            .filter(
+                ~exists().where(HarvestGatherError.harvest_job_id == HarvestJob.id))
+            .order_by(HarvestJob.gather_started.desc()))
 
         # now check them until we find one with no fetch/import errors,
         # which isn't a reimport job
@@ -1033,10 +1031,11 @@ class FisbrokerHarvester(CSWHarvester):
                 continue
             for obj in job.objects:
                 if obj.current is False and \
-                        obj.report_status != 'not modified':
-                    # unsuccessful, so go onto the next job
+                        obj.report_status not in(['not modified', 'deleted']):
+                    # this job is not error_free, so go onto the next job
                     break
             else:
+                # there was no break in the for-loop
                 return job
 
 
