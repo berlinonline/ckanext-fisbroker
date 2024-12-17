@@ -4,32 +4,24 @@ on:
     branches:
       - '**'
 jobs:
-  # lint:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v2
-  #     - uses: actions/setup-python@v2
-  #       with:
-  #         python-version: '3.6'
-  #     - name: Install requirements
-  #       run: pip install flake8 pycodestyle
-  #     - name: Check syntax
-  #       run: flake8 . --count --select=E901,E999,F821,F822,F823 --show-source --statistics --exclude ckan
-
+  
   test:
     # needs: lint
     strategy:
       matrix:
-        ckan-version: [2.9]
+        ckan-base-version: [2.9]
+        ckan-version: [py3.9]
+        solr-version: [solr8]
       fail-fast: false
 
-    name: CKAN ${{ matrix.ckan-version }}
+    name: CKAN ${{ matrix.ckan-base-version }}
     runs-on: ubuntu-latest
     container:
-      image: openknowledge/ckan-dev:${{ matrix.ckan-version }}
+      image: ckan/ckan-dev:${{ matrix.ckan-base-version }}-${{ matrix.ckan-version }}
+      options: --user root
     services:
       solr:
-        image: ckan/ckan-solr:${{ matrix.ckan-version }}-solr9
+        image: ckan/ckan-solr:${{ matrix.ckan-base-version }}-${{ matrix.solr-version }}
       postgres:
         image: postgis/postgis:10-3.1
         env:
@@ -49,6 +41,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - name: Install CURL
+      run: apt install curl -y    
     - name: Create Database
       run: |
         psql --host=postgres --username=postgres --command="CREATE USER ckan_default WITH PASSWORD 'pass' NOSUPERUSER NOCREATEDB NOCREATEROLE;"
