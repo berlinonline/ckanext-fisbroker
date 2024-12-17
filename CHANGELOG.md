@@ -2,6 +2,12 @@
 
 ## Development
 
+## [1.4.6](https://github.com/berlinonline/ckanext-fisbroker/releases/tag/1.4.6)
+
+_(2024-12-17)_
+
+- publiccode.yml for OpenCode
+
 ## [1.4.5](https://github.com/berlinonline/ckanext-fisbroker/releases/tag/1.4.5)
 
 _(2024-10-23)_
