@@ -44,7 +44,7 @@ jobs:
     - name: Install CURL
       run: apt install curl -y
     - name: Install psql
-      run: apt install postgresql-client
+      run: apt install postgresql-client -y
     - name: Create Database
       run: |
         psql --host=postgres --username=postgres --command="CREATE USER ckan_default WITH PASSWORD 'pass' NOSUPERUSER NOCREATEDB NOCREATEROLE;"
