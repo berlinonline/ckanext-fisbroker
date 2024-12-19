@@ -6,7 +6,7 @@
 
 _(2024-12-17)_
 
-- publiccode.yml for OpenCode
+- Add `publiccode.yml` for OpenCode.
 
 ## [1.4.5](https://github.com/berlinonline/ckanext-fisbroker/releases/tag/1.4.5)
 
