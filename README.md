@@ -1,7 +1,7 @@
 # ckanext-fisbroker
 
-[![Tests](https://github.com/berlinonline/ckanext-fisbroker/workflows/Tests/badge.svg?branch=master)](https://github.com/berlinonline/ckanext-fisbroker/actions)
-[![Code Coverage](http://codecov.io/github/berlinonline/ckanext-fisbroker/coverage.svg?branch=master)](http://codecov.io/github/berlinonline/ckanext-fisbroker?branch=master)
+[![Tests](https://github.com/berlinonline/ckanext-fisbroker/actions/workflows/test.yml/badge.svg?branch=master)](https://github.com/berlinonline/ckanext-fisbroker/actions)
+[![Code Coverage](https://codecov.io/github/berlinonline/ckanext-fisbroker/coverage.svg?branch=master)](http://codecov.io/github/berlinonline/ckanext-fisbroker?branch=master)
 
 ![logo for the ckanext-fisbroker CKAN extension](logo/fisbroker-harvester-logo_small.png)
 
