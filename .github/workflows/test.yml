@@ -61,16 +61,12 @@ jobs:
         pip install -e .
     - name: Install ckanext-spatial dependencies
       run: |
-        apk add --no-cache \
-          geos \
-          geos-dev \
-          proj-util \
-          proj-dev \
-          libxml2 \
-          libxslt \
-          gcc \
+        DEBIAN_FRONTEND=noninteractive apt-get --assume-yes --quiet install \
+          python3-dev \
           libxml2-dev \
-          libxslt-dev
+          libxslt1-dev \
+          libgeos-c1v5
+
     - name: Patch to test pyproj
       if: ${{ matrix.ckan-version == '2.9' }}
       run: |
