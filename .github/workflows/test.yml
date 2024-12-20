@@ -76,7 +76,7 @@ jobs:
       run: |
         git clone https://github.com/ckan/ckanext-spatial
         cd ckanext-spatial
-        git checkout tags/v2.1.1
+        git checkout tags/v2.2.0
         pip install -e .
         pip install -r requirements.txt
     - name: Install own requirements
