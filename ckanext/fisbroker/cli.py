@@ -4,18 +4,23 @@ import json
 import logging
 import sys
 import time
+import datetime
 
 import click
 
 from ckan import logic
 from ckan import model
+from ckan.lib import mailer
+import ckan.plugins.toolkit as tk
 
 from ckanext.fisbroker import HARVESTER_ID
 import ckanext.fisbroker.blueprint as blueprint
 from ckanext.fisbroker.fisbroker_harvester import FisbrokerHarvester
 from ckanext.fisbroker.exceptions import NotFoundInFisbrokerError
 
-from ckanext.harvest.model import HarvestObject, HarvestSource
+from ckanext.harvest.model import HarvestObject, HarvestSource, HarvestJob
+from ckanext.harvest.queue import get_connection
+
 
 LOG = logging.getLogger(__name__)
 FISBROKER_SOURCE_NAME = 'harvest-fisbroker'
@@ -93,6 +98,56 @@ def _reimport_dataset(dataset_ids, context):
         }
 
     return result
+
+def is_harvest_redis_available():
+    '''
+        Check if harvester has connection to Redis
+    '''
+    try:
+        conn = get_connection()
+        return conn.ping()
+    except Exception:
+        return False
+
+def get_sysadmin_emails():
+    '''
+        Get all sysadmins emails
+    '''
+    recipients = []
+
+    sysadmins = model.Session.query(model.User).filter(
+        model.User.sysadmin == True
+    ).all()
+
+    # Send mail to all sysadmins with a non-empty email address
+    for sysadmin in sysadmins:
+        email_address = sysadmin.email
+        if email_address and email_address.strip():
+            recipients.append({
+                'name': sysadmin.name,
+                'email': email_address,
+            })
+    return recipients
+
+def send_notification_email(subject, message):
+    body = "CKAN Monitoring Alert\n\n" + "=" * 40 + "\n\n" + "\n\n".join(message)
+    recipients = get_sysadmin_emails()
+    send_mail(recipients, subject, body)
+
+def send_mail(recipients, subject, body):
+    for recipient in recipients:
+        email = {'recipient_name': recipient['name'],
+                 'recipient_email': recipient['email'],
+                 'subject': subject,
+                 'body': body}
+        try:
+            mailer.mail_recipient(**email)
+        except mailer.MailerException:
+            LOG.error(
+                'Sending Harvest-Notification-Mail failed. Message: ' + body)
+        except Exception as e:
+            LOG.error(e)
+            raise
 
 def get_commands():
     return [fisbroker]
@@ -268,6 +323,63 @@ def reimport_dataset(ctx: click.Context, source: str, datasetid: str, offset: in
     click.echo(json.dumps(output, indent=JSON_INDENT))
     end = time.time()
     click.echo(f"This took {end - start} seconds", err=True)
+
+@fisbroker.command()
+def check_harvest_status():
+    """
+        Harvester monitoring:
+        - check if Redis is available
+        - check if a harvester job has been running for more then a day
+
+        Send an email to all sysadmins with information
+    """
+    alerts = []
+
+    # Check if Redis is available
+    if not is_harvest_redis_available():
+        alerts.append("Redis service unavailable!")
+    else:
+        click.echo("Redis connection verified")
+
+    # Check for stuck harvest jobs (default: minimum running time 1 day)
+    try:
+        stuck_threshold = int(tk.config.get(
+            "ckanext.fisbroker.stuck_threshold",
+            1440  # Default: 1 day in minutes
+        ))
+
+        jobs = model.Session.query(HarvestJob).filter(
+            HarvestJob.status == "Running"
+        ).all()
+
+        stuck_jobs = []
+        for job in jobs:
+            duration = (datetime.datetime.utcnow() - job.created).total_seconds() / 60
+            if duration > stuck_threshold:
+                stuck_jobs.append({
+                    "id": job.id,
+                    "source": job.source.title,
+                    "duration": f"{duration:.1f} minutes"
+                })
+
+        if stuck_jobs:
+            alerts.append("Stuck harvest jobs:\n" + "\n".join(
+                f"- {j['source']} (ID: {j['id']}) running for {j['duration']}"
+                for j in stuck_jobs
+            ))
+
+    except Exception as e:
+        alerts.append(f"Monitoring failed: {str(e)}")
+
+    # Send email if issues were found
+    if alerts:
+        send_notification_email(
+            "CKAN Harvest System Alert",
+            alerts
+        )
+        click.echo(f"Sent alerts: {len(alerts)} issues detected")
+    else:
+        click.echo("All systems operational")
 
 class MockHarvestJob:
     pass
