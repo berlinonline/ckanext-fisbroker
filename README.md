@@ -56,6 +56,18 @@ Clicking will open the full CSW record for this dataset on its original server.
 
 ![Screenshot eines Datensatzes "Schutzgebiete nach Naturschutzrecht" im Datenregister, mit rot hervorgehobenem "Open CSW Record"-Button](image/open_csw_record_button.png)
 
+## Configuration
+
+The plugin introduces the following configuration options:
+
+### fisbroker.stuck_threshold
+
+Defines the maximum allowed duration for harvest jobs. Used in `check-harvest-status` CLI Command.
+
+```ini
+fisbroker.stuck_threshold = 1440 # one day in minutes, default value
+```
+
 ### Command Line Interface
 
 The plugin also defines a `fisbroker` command for the `ckan` cli tool, to list or reimport one or more datasets, as well as some other tasks.
@@ -74,6 +86,7 @@ Options:
 Commands:
   harvest-objects              Show all harvest objects with their CSW-
                                guids...
+  check-harvest-status         Harvester monitoring: - check if Redis is...
 
   last-successful-job          Show the last successful job that was not a...
   list-datasets                List the ids and titles of all datasets...

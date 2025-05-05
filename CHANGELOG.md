@@ -1,6 +1,12 @@
 # Changelog
 
 ## Development
+## [1.4.7](https://github.com/berlinonline/ckanext-fisbroker/releases/tag/1.4.7)
+
+_(2025-05-05)_
+
+- Fix license parsing
+- Add new CLI command `check_harvest_status` for checking if redis is available and/or a harvester job has been running for more then 24 hours, sending a notification to all sys admins in case the checks fail
 
 ## [1.4.6](https://github.com/berlinonline/ckanext-fisbroker/releases/tag/1.4.6)
 

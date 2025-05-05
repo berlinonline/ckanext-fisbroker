@@ -120,8 +120,8 @@ def extract_license_and_attribution(data_dict):
         for restriction in iso_values['limitations-on-public-access']:
             try:
                 structured = json.loads(restriction)
-                license_and_attribution['license_id'] = structured['id']
-                license_and_attribution['attribution_text'] = structured['quelle']
+                license_and_attribution['license_id'] = structured.get('id')
+                license_and_attribution['attribution_text'] = structured.get('quelle')
             except ValueError:
                 LOG.info(f"could not parse as JSON: {restriction}")
 
