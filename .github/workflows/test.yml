@@ -80,7 +80,7 @@ jobs:
         git clone --branch v2.1.1 https://github.com/ckan/ckanext-spatial
         cd ckanext-spatial
         pip install -r requirements.txt
-        pip install -e .
+        pip install -e . -v
     - name: Install own requirements
       run: |
         pip install -r dev-requirements.txt
