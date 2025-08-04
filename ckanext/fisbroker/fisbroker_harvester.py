@@ -50,6 +50,18 @@ import ckanext.fisbroker.helper as helpers
 LOG = logging.getLogger(__name__)
 TIMEDELTA_DEFAULT = 0
 TIMEOUT_DEFAULT = 20
+LICENSE_DL_DE_BY_2 = "dl-de-by-2.0"
+LICENSE_DL_DE_ZERO_2 = "dl-de-zero-2.0"
+CC_BY_4 = "cc-by/4.0"
+CC_BY_3 = "cc-by"
+LICENSE_ID_MAPPING = {
+    "dl-de-by-2-0": LICENSE_DL_DE_BY_2,
+    "dl-de-/by-2-0": LICENSE_DL_DE_BY_2,
+    "dl-by-de/2.0": LICENSE_DL_DE_BY_2,
+    "dl-zero-de/2.0": LICENSE_DL_DE_ZERO_2,
+    "CC BY 3.0 DE": CC_BY_3,
+    "CC BY 4.0 DE": CC_BY_4,
+}
 
 
 def marked_as_opendata(data_dict):
@@ -108,6 +120,10 @@ def extract_contact_info(data_dict):
 
     return contact_info
 
+def map_license_ids(gdi_id: str) -> str:
+    '''Map a license id as used in the GDI/FIS-Broker to the license id the
+    Datenregister uses internally.'''
+    return LICENSE_ID_MAPPING.get(gdi_id, gdi_id)
 
 def extract_license_and_attribution(data_dict):
     '''Extract `license_id` and `attribution_text` dataset metadata from
@@ -131,12 +147,10 @@ def extract_license_and_attribution(data_dict):
     # We could eventually also use dl-by-de/2.0, but for now we need to convert.
     if 'license_id' in license_and_attribution:
         old_license_id = license_and_attribution['license_id']
-        new_license_id = "dl-de-by-2.0"
-        if (old_license_id == "dl-de-by-2-0" or
-            old_license_id == "dl-de-/by-2-0" or
-            old_license_id == "dl-by-de/2.0"):
+        new_license_id = map_license_ids(old_license_id)
+        if (new_license_id != old_license_id):
             license_and_attribution['license_id'] = new_license_id
-        LOG.info(f"replace license_id '{old_license_id}' with '{new_license_id}'")
+            LOG.info(f"replace license_id '{old_license_id}' with '{new_license_id}'")
 
     return license_and_attribution
 
