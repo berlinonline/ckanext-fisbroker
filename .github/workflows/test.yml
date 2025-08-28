@@ -40,11 +40,13 @@ jobs:
       PGPASSWORD: postgres
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
+    - name: Update package index
+      run: apt-get update
     - name: Install CURL
-      run: apt install curl -y
+      run: apt-get install curl -y
     - name: Install psql
-      run: apt install postgresql-client -y
+      run: apt-get install postgresql-client -y
     - name: Create Database
       run: |
         psql --host=postgres --username=postgres --command="CREATE USER ckan_default WITH PASSWORD 'pass' NOSUPERUSER NOCREATEDB NOCREATEROLE;"
@@ -61,18 +63,17 @@ jobs:
         pip install -e .
     - name: Install ckanext-spatial dependencies
       run: |
-        apk add --no-cache \
-          geos \
-          geos-dev \
-          proj-util \
-          proj-dev \
+        apt-get install -y \
+          libgeos-dev \
+          proj-bin \
+          libproj-dev \
           libxml2 \
-          libxslt \
-          gcc \
+          libxslt1.1 \
+          build-essential \
           libxml2-dev \
-          libxslt-dev
+          libxslt1-dev
     - name: Patch to test pyproj
-      if: ${{ matrix.ckan-version == '2.9' }}
+      if: ${{ matrix.ckan-base-version == '2.9' }}
       run: |
         pip install cython==0.29.36
         pip install --no-use-pep517 pyproj==2.6.1
@@ -80,9 +81,11 @@ jobs:
       run: |
         git clone https://github.com/ckan/ckanext-spatial
         cd ckanext-spatial
+        git fetch --tags
         git checkout tags/v2.1.1
-        pip install -e .
+        sed -i "s/from ckanext.spatial import __version__/__version__ = '2.1.1'/" setup.py
         pip install -r requirements.txt
+        pip install -e .
     - name: Install own requirements
       run: |
         pip install -r dev-requirements.txt
