@@ -1,6 +1,9 @@
 # Changelog
 
 ## Development
+
+- Fix Github Workflow
+
 ## [1.4.7](https://github.com/berlinonline/ckanext-fisbroker/releases/tag/1.4.7)
 
 _(2025-05-05)_
