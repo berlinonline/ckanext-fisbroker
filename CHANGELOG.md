@@ -1,8 +1,12 @@
 # Changelog
 
 ## Development
+## [1.4.8](https://github.com/berlinonline/ckanext-fisbroker/releases/tag/1.4.8)
+
+_(2025-10-23)_
 
 - Fix Github Workflow
+- Add new CLI command `check_hanging_jobs` for restarting the harvesters that have been idle for more then 24h
 
 ## [1.4.7](https://github.com/berlinonline/ckanext-fisbroker/releases/tag/1.4.7)
 
