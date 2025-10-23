@@ -373,6 +373,7 @@ def check_harvest_status():
 
     # Send email if issues were found
     if alerts:
+        alerts.append("A cronjob is taking care of bringing everything up to a working state!")
         send_notification_email(
             "CKAN Harvest System Alert",
             alerts
@@ -380,6 +381,45 @@ def check_harvest_status():
         click.echo(f"Sent alerts: {len(alerts)} issues detected")
     else:
         click.echo("All systems operational")
+
+@fisbroker.command()
+def check_hanging_jobs():
+    """
+        Harvester monitoring:
+        - check if a harvester job has been running for more then a day
+    """
+    alerts = []
+    # Check for hanging harvest jobs (default: minimum running time 1 day)
+    try:
+        stuck_threshold = int(tk.config.get(
+            "ckanext.fisbroker.stuck_threshold",
+            1440  # Default: 1 day in minutes (1440)
+        ))
+
+        jobs = model.Session.query(HarvestJob).filter(
+            HarvestJob.status == "Running"
+        ).all()
+
+        stuck_jobs = []
+        for job in jobs:
+            duration = (datetime.datetime.utcnow() - job.created).total_seconds() / 60
+            if duration > stuck_threshold:
+                stuck_jobs.append({
+                    "id": job.id,
+                    "source": job.source.title,
+                    "duration": f"{duration:.1f} minutes"
+                })
+
+        if stuck_jobs:
+            alerts.append("Stuck harvest jobs:\n" + "\n".join(
+                f"- {j['source']} (ID: {j['id']}) running for {j['duration']}"
+                for j in stuck_jobs
+            ))
+        click.echo(f"Sent alerts: {len(alerts)} issues detected")
+        return len(alerts)
+
+    except Exception as e:
+        alerts.append(f"Monitoring failed: {str(e)}")
 
 class MockHarvestJob:
     pass
