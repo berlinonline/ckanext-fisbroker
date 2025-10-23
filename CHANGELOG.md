@@ -1,19 +1,22 @@
 # Changelog
 
 ## Development
+
+- Set env variables for database and Solr index in scripts for running unit tests locally.
+
 ## [1.4.8](https://github.com/berlinonline/ckanext-fisbroker/releases/tag/1.4.8)
 
 _(2025-10-23)_
 
-- Fix Github Workflow
-- Add new CLI command `check_hanging_jobs` for restarting the harvesters that have been idle for more then 24h
+- Fix fithub workflow.
+- Add new CLI command `check_hanging_jobs` for restarting the harvesters that have been idle for more than 24h.
 
 ## [1.4.7](https://github.com/berlinonline/ckanext-fisbroker/releases/tag/1.4.7)
 
 _(2025-05-05)_
 
-- Fix license parsing
-- Add new CLI command `check_harvest_status` for checking if redis is available and/or a harvester job has been running for more then 24 hours, sending a notification to all sys admins in case the checks fail
+- Fix license parsing.
+- Add new CLI command `check_harvest_status` for checking if redis is available and/or a harvester job has been running for more then 24 hours, sending a notification to all sys admins in case the checks fail.
 
 ## [1.4.6](https://github.com/berlinonline/ckanext-fisbroker/releases/tag/1.4.6)
 
