@@ -9,6 +9,7 @@ from ckanext.fisbroker.helper import normalize_url
 LOG = logging.getLogger(__name__)
 FORMAT_WFS = "WFS"
 FORMAT_WMS = "WMS"
+FORMAT_WMTS = "WMTS"
 FORMAT_ATOM = "Atom"
 FORMAT_HTML = "HTML"
 FORMAT_PDF = "PDF"
@@ -16,7 +17,7 @@ FUNCTION_API_ENDPOINT = "api_endpoint"
 FUNCTION_API_DESCRIPTION = "api_description"
 FUNCTION_WEB_INTERFACE = "web_interface"
 FUNCTION_DOCUMENTATION = "documentation"
-VALID_SERVICE_TYPES = [FORMAT_WFS.lower(), FORMAT_WMS.lower()]
+VALID_SERVICE_TYPES = [FORMAT_WFS.lower(), FORMAT_WMS.lower(), FORMAT_WMTS.lower()]
 
 class FISBrokerResourceAnnotator:
     '''A class to assign meaningful metadata to FIS-Broker resource objects from a CKAN
@@ -38,6 +39,8 @@ class FISBrokerResourceAnnotator:
             return "1.3.0"
         elif service == "wfs":
             return "2.0.0"
+        elif service == "wmts":
+            return "1.0.0"
         raise ValueError(f"Service must be one of [ {', '.join(VALID_SERVICE_TYPES)} ].")
 
     def annotate_service_resource(self, resource):
@@ -47,6 +50,8 @@ class FISBrokerResourceAnnotator:
             service_type = FORMAT_WFS
         elif "/wms/" in resource['url']:
             service_type = FORMAT_WMS
+        elif "/wmts/" in resource['url']:
+            service_type = FORMAT_WMTS
         else:
             raise ValueError(f"Resource type must be one of [ {', '.join(VALID_SERVICE_TYPES)} ].")
 
@@ -100,7 +105,8 @@ class FISBrokerResourceAnnotator:
             resource['main'] = True
             resource['internal_function'] = FUNCTION_API_ENDPOINT
             resource['weight'] = 15
-        elif "/wfs/" in resource['url'] or "/wms/" in resource['url']:
+        elif any(service_type in resource['url'] for service_type in [f'/{service_type}/' for service_type in\
+ VALID_SERVICE_TYPES]):
             resource = self.annotate_service_resource(resource)
         elif self.is_fis_broker_service_page(resource['url']):
             resource['name'] = "Serviceseite im FIS-Broker"

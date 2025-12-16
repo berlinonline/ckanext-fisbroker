@@ -555,7 +555,7 @@ class TestHarvester(FisbrokerTestBase):
             groups=[{'id': group['id'], 'name': group['name']}],
             license_id='dl-de-by-2.0',
             author='Senatsverwaltung für Umwelt, Verkehr und Klimaschutz Berlin',
-            date_released=f'2018-08-13',
+            date_released='2018-08-13',
             maintainer_email='michael.thelemann@senuvk.berlin.de',
             extras=[{'key': 'guid', 'value': WFS_FIXTURE['object_id']}]
         )
