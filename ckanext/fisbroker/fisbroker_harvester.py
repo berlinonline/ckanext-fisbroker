@@ -193,7 +193,7 @@ def extract_preview_image(data_dict: dict) -> str:
     preview_graphics = iso_values.get("browse-graphic", [])
     for preview_graphic in preview_graphics:
         preview_graphic_title = preview_graphic.get('description', None)
-        if preview_graphic_title == "Vorschaugrafik":
+        if preview_graphic_title == "Vorschaubild":
             preview_graphic_path = preview_graphic.get('file', None)
             if preview_graphic_path:
                 return preview_graphic_path
@@ -211,7 +211,7 @@ def extract_preview_markup(data_dict):
     preview_graphics = iso_values.get("browse-graphic", [])
     for preview_graphic in preview_graphics:
         preview_graphic_title = preview_graphic.get('description', None)
-        if preview_graphic_title == "Vorschaugrafik":
+        if preview_graphic_title == "Vorschaubild":
             preview_graphic_title = f"Vorschaugrafik zu Datensatz '{package_dict['title']}'"
             preview_graphic_path = preview_graphic.get('file', None)
             if preview_graphic_path:
