@@ -2,6 +2,8 @@
 
 ## Development
 
+- More fixing of license parsing (noew for `dl-de-zero-2.0`).
+- Fix extraction of preview image (now labelled "Vorschaubild" instead of "Vorschaugrafik").
 - Set env variables for database and Solr index in scripts for running unit tests locally.
 
 ## [1.4.8](https://github.com/berlinonline/ckanext-fisbroker/releases/tag/1.4.8)

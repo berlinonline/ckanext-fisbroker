@@ -238,18 +238,54 @@ class TestTransformationHelpers(FisbrokerTestBase):
         data_dict = self._csw_resource_data_dict('wfs-no-license.xml')
         assert FisbrokerHarvester().get_package_dict(base_context, data_dict) == 'skip'
 
-    def test_fix_bad_dl_de_id(self):
+    @pytest.mark.parametrize("data", [
+        {
+            'data_dict': {
+                'iso_values': {
+                    'limitations-on-public-access': [
+                        '{ "id": "dl-de-by-2-0" , "name": " Datenlizenz Deutschland - Namensnennung - Version 2.0 ", "url": "https://www.govdata.de/dl-de/by-2-0", "quelle": "Umweltatlas Berlin / [Titel des Datensatzes]" }'
+                    ]
+                }
+            },
+            'expected_id': 'dl-de-by-2.0'
+        },
+        {
+            'data_dict': {
+                'iso_values': {
+                    'limitations-on-public-access': [
+                        '{ "id": "dl-de-/by-2-0" , "name": " Datenlizenz Deutschland - Namensnennung - Version 2.0 ", "url": "https://www.govdata.de/dl-de/by-2-0", "quelle": "Umweltatlas Berlin / [Titel des Datensatzes]" }'
+                    ]
+                }
+            },
+            'expected_id': 'dl-de-by-2.0'
+        },
+        {
+            'data_dict': {
+                'iso_values': {
+                    'limitations-on-public-access': [
+                        '{ "id": "dl-by-de/2.0" , "name": " Datenlizenz Deutschland - Namensnennung - Version 2.0 ", "url": "https://www.govdata.de/dl-de/by-2-0", "quelle": "Umweltatlas Berlin / [Titel des Datensatzes]" }'
+                    ]
+                }
+            },
+            'expected_id': 'dl-de-by-2.0'
+        },
+        {
+            'data_dict': {
+                'iso_values': {
+                    'limitations-on-public-access': [
+                        '{ "id": "dl-zero-de/2.0" , "name": "Datenlizenz Deutschland - Zero - Version 2.0", "url": "https://www.govdata.de/dl-de/zero-2-0" }'
+                    ]
+                }
+            },
+            'expected_id': 'dl-de-zero-2.0'
+        },
+    ])
+    def test_fix_bad_dl_de_id(self, data):
         '''Test if incorrect license id for DL-DE-BY has been corrected.'''
 
-        data_dict = {
-            'iso_values': {
-                'limitations-on-public-access': [
-                    '{ "id": "dl-de-by-2-0" , "name": " Datenlizenz Deutschland - Namensnennung - Version 2.0 ", "url": "https://www.govdata.de/dl-de/by-2-0", "quelle": "Umweltatlas Berlin / [Titel des Datensatzes]" }'
-                ]
-            }
-        }
+        data_dict = data['data_dict']
         license_and_attribution = extract_license_and_attribution(data_dict)
-        assert license_and_attribution['license_id'] == "dl-de-by-2.0"
+        assert license_and_attribution['license_id'] == data['expected_id']
 
     def test_skip_on_missing_release_date(self, base_context):
         '''Test if get_package_dict() returns 'skip' for a service resource
