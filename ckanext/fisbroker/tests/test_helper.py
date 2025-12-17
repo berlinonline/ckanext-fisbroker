@@ -30,10 +30,17 @@ GETCAPABILITIES_URL_2 = 'https://fbinter.stadt-berlin.de/fb/wfs/data/senstadt/s0
 class TestHelper(FisbrokerTestBase):
     """Test functionality of ckanext.fisbroker.helper"""
 
-    def test_normalize_url(self):
+    @pytest.mark.parametrize("data", [
+        [ GETCAPABILITIES_URL_1, GETCAPABILITIES_URL_2 ],
+        [ 
+            'https://gdi.berlin.de/services/wmts/k5_farbe?REQUEST=getcapabilities&SERVICE=wmts&VERSION=1.0.0',
+            'https://gdi.berlin.de/services/wmts/k5_farbe?request=getcapabilities&service=wmts&version=1.0.0'
+        ]
+    ])
+    def test_normalize_url(self, data):
         """Two URLs should be equal once their query strings have been normalized."""
 
-        assert normalize_url(GETCAPABILITIES_URL_1) == normalize_url(GETCAPABILITIES_URL_2)
+        assert normalize_url(data[0]) == normalize_url(data[1])
 
     def test_uniq_resources(self):
         """In a list of resources with two identical URLs, the second one should be removed."""

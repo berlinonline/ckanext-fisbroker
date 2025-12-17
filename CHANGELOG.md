@@ -1,6 +1,16 @@
 # Changelog
 
 ## Development
+
+## [1.4.9](https://github.com/berlinonline/ckanext-fisbroker/releases/tag/1.4.9)
+
+_(2025-12-17)_
+
+- Handle WMTS better.
+- More fixing of license parsing (noew for `dl-de-zero-2.0`).
+- Fix extraction of preview image (now labelled "Vorschaubild" instead of "Vorschaugrafik").
+- Set env variables for database and Solr index in scripts for running unit tests locally.
+
 ## [1.4.8](https://github.com/berlinonline/ckanext-fisbroker/releases/tag/1.4.8)
 
 _(2025-10-23)_
@@ -12,8 +22,8 @@ _(2025-10-23)_
 
 _(2025-05-05)_
 
-- Fix license parsing
-- Add new CLI command `check_harvest_status` for checking if redis is available and/or a harvester job has been running for more then 24 hours, sending a notification to all sys admins in case the checks fail
+- Fix license parsing.
+- Add new CLI command `check_harvest_status` for checking if redis is available and/or a harvester job has been running for more then 24 hours, sending a notification to all sys admins in case the checks fail.
 
 ## [1.4.6](https://github.com/berlinonline/ckanext-fisbroker/releases/tag/1.4.6)
 
