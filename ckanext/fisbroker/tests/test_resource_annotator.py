@@ -7,6 +7,7 @@ from ckanext.fisbroker.fisbroker_resource_annotator import (
     FISBrokerResourceAnnotator,
     FORMAT_WFS,
     FORMAT_WMS,
+    FORMAT_WMTS,
     FORMAT_HTML,
     FORMAT_PDF,
     FORMAT_ATOM,
@@ -23,8 +24,8 @@ LOG = logging.getLogger(__name__)
 class TestResourceAnnotator(object):
     """Various tests for the FISBrokerResourceAnnotator class"""
 
-    def test_only_wms_and_wfs_allowed(self):
-        '''Some methods only allow 'wms' or 'wfs' as the service parameter.
+    def test_only_wms_wmts_wfs_allowed(self):
+        '''Some methods only allow 'wms', 'wmts' or 'wfs' as the service parameter.
            Other values should raise an exception.'''
         with pytest.raises(ValueError) as e:
             FISBrokerResourceAnnotator.service_version('atom')
@@ -51,16 +52,16 @@ class TestResourceAnnotator(object):
         assert not converted_resource['main']
 
     @pytest.mark.parametrize("service", [
-            {'url': 'https://fbinter.stadt-berlin.de/fb/wfs/data/senstadt/s_boden_wfs1_2015?request=getcapabilities&service=wfs&version=2.0.0', 'format': FORMAT_WFS},
-            {'url': 'https://fbinter.stadt-berlin.de/fb/wfs/data/senstadt/s_boden_wfs1_2015?request=GetCapabilities&service=wfs&version=2.0.0', 'format': FORMAT_WFS},
-            {'url': 'https://fbinter.stadt-berlin.de/fb/wms/senstadt/wmsk_02_14_04gwtemp_60m?request=getcapabilities&service=wms&version=1.3.0', 'format': FORMAT_WMS}
+            {'url': 'https://gdi.berlin.de/services/wfs/ua_srgk?REQUEST=GetCapabilities&SERVICE=wfs', 'format': FORMAT_WFS},
+            {'url': 'https://gdi.berlin.de/services/wms/truedop_2013?REQUEST=GetCapabilities&SERVICE=wms', 'format': FORMAT_WMS},
+            {'url': 'https://gdi.berlin.de/services/wmts/k5_farbe?REQUEST=GetCapabilities&SERVICE=wmts', 'format': FORMAT_WMTS},
     ])
     def test_annotate_getcapabilities_url(self, service):
         """An incoming FIS-Broker service resource with URL parameters containing
            'request=GetCapabilities' should be annotated correctly. That means the URL
            should be unchanged, the internal function should be set etc.
            Case of 'getcapabilities' should not matter.
-           Test both WFS and WMS."""
+           Test both WFS, WMS and WMTS."""
 
         resource = {'url': service['url']}
         annotator = FISBrokerResourceAnnotator()
@@ -240,6 +241,33 @@ class TestResourceAnnotator(object):
                     'internal_function': FUNCTION_API_ENDPOINT,
                     'main': False,
                     'description': 'API-Endpunkt des WMS-Service. Weitere Informationen unter https://www.ogc.org/standards/wms'
+                },
+            ]
+        },
+        {
+            'resources': [
+                {
+                    'url': normalize_url('https://gdi.berlin.de/services/wmts/k5_farbe')
+                },
+            ],
+            'expected': [
+                {
+                    'name': 'Endpunkt-Beschreibung des WMTS-Service',
+                    'weight': 10,
+                    'format': FORMAT_WMTS,
+                    'url': normalize_url('https://gdi.berlin.de/services/wmts/k5_farbe?REQUEST=getcapabilities&SERVICE=wmts&VERSION=1.0.0'),
+                    'internal_function': FUNCTION_API_DESCRIPTION,
+                    'main': True,
+                    'description': 'Maschinenlesbare Endpunkt-Beschreibung des WMTS-Service. Weitere Informationen unter https://www.ogc.org/standards/wmts'
+                },
+                {
+                    'url': 'https://gdi.berlin.de/services/wmts/k5_farbe',
+                    'name': 'API-Endpunkt des WMTS-Service',
+                    'weight': 15,
+                    'format': FORMAT_WMTS,
+                    'internal_function': FUNCTION_API_ENDPOINT,
+                    'main': False,
+                    'description': 'API-Endpunkt des WMTS-Service. Weitere Informationen unter https://www.ogc.org/standards/wmts'
                 },
             ]
         }

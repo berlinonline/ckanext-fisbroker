@@ -51,6 +51,17 @@ LOG = logging.getLogger(__name__)
 TIMEDELTA_DEFAULT = 0
 TIMEOUT_DEFAULT = 20
 
+# Mapping from various versions of DL ids in incoming data to our
+# internal ones.
+# TODO: we're actually using the wrong ids internally, this needs to be
+# fixed everywhere (not just this plugin). Once that has happened, we should
+# remove some of the entries here
+DL_LICENSE_ID_MAPPING = {
+    'dl-de-by-2-0': 'dl-de-by-2.0',
+    'dl-de-/by-2-0': 'dl-de-by-2.0',
+    'dl-by-de/2.0': 'dl-de-by-2.0', # fixing the correct code to our internal one, remove eventually
+    'dl-zero-de/2.0': 'dl-de-zero-2.0', # fixing the correct code to our internal one, remove eventually
+}
 
 def marked_as_opendata(data_dict):
     '''Check if `data_dict` is marked as Open Data. If it is,
@@ -131,12 +142,10 @@ def extract_license_and_attribution(data_dict):
     # We could eventually also use dl-by-de/2.0, but for now we need to convert.
     if 'license_id' in license_and_attribution:
         old_license_id = license_and_attribution['license_id']
-        new_license_id = "dl-de-by-2.0"
-        if (old_license_id == "dl-de-by-2-0" or
-            old_license_id == "dl-de-/by-2-0" or
-            old_license_id == "dl-by-de/2.0"):
+        if old_license_id in DL_LICENSE_ID_MAPPING:
+            new_license_id = DL_LICENSE_ID_MAPPING[old_license_id]
             license_and_attribution['license_id'] = new_license_id
-        LOG.info(f"replace license_id '{old_license_id}' with '{new_license_id}'")
+            LOG.info(f"replace license_id '{old_license_id}' with '{new_license_id}'")
 
     return license_and_attribution
 
@@ -193,7 +202,7 @@ def extract_preview_image(data_dict: dict) -> str:
     preview_graphics = iso_values.get("browse-graphic", [])
     for preview_graphic in preview_graphics:
         preview_graphic_title = preview_graphic.get('description', None)
-        if preview_graphic_title == "Vorschaugrafik":
+        if preview_graphic_title == "Vorschaubild":
             preview_graphic_path = preview_graphic.get('file', None)
             if preview_graphic_path:
                 return preview_graphic_path
@@ -211,7 +220,7 @@ def extract_preview_markup(data_dict):
     preview_graphics = iso_values.get("browse-graphic", [])
     for preview_graphic in preview_graphics:
         preview_graphic_title = preview_graphic.get('description', None)
-        if preview_graphic_title == "Vorschaugrafik":
+        if preview_graphic_title == "Vorschaubild":
             preview_graphic_title = f"Vorschaugrafik zu Datensatz '{package_dict['title']}'"
             preview_graphic_path = preview_graphic.get('file', None)
             if preview_graphic_path:

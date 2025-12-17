@@ -25,7 +25,7 @@ def normalize_url(url):
     for parameter in sorted(query):
         normalized_query.append(f"{parameter}={query[parameter][0].lower()}")
 
-    return urlunparse(parsed._replace(query="&".join(normalized_query)))
+    return urlunparse(parsed._replace(query="&".join(normalized_query))).lower()
 
 def uniq_resources_by_url(resources):
     """Consider resources with the same URL to be identical, remove duplicates
