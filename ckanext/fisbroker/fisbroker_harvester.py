@@ -128,13 +128,15 @@ def extract_license_and_attribution(data_dict):
     iso_values = data_dict['iso_values']
 
     if 'limitations-on-public-access' in iso_values:
-        for restriction in iso_values['limitations-on-public-access']:
-            try:
-                structured = json.loads(restriction)
-                license_and_attribution['license_id'] = structured.get('id')
-                license_and_attribution['attribution_text'] = structured.get('quelle')
-            except ValueError:
-                LOG.info(f"could not parse as JSON: {restriction}")
+        # get the second element of the list
+        restriction = iso_values['limitations-on-public-access'][1]
+        try:
+            structured = json.loads(restriction)
+            license_and_attribution['license_id'] = structured.get('id')
+            # some of them have quelle element and some of the datasets dont
+            license_and_attribution['attribution_text'] = structured.get('quelle')
+        except ValueError:
+            LOG.info(f"could not parse as JSON: {restriction}")
 
     # internally, we use 'dl-de-by-2.0' as the id for
     # Datenlizenz Deutschland – Namensnennung – Version 2.0
@@ -924,6 +926,7 @@ class FisbrokerHarvester(CSWHarvester):
             # license_id
 
             license_and_attribution = extract_license_and_attribution(data_dict)
+            print (license_and_attribution)
 
             if 'license_id' not in license_and_attribution:
                 LOG.error('could not determine license code, skipping ...')
