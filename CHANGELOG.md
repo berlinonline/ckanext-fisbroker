@@ -2,14 +2,21 @@
 
 ## Development
 
+## [1.4.9](https://github.com/berlinonline/ckanext-fisbroker/releases/tag/1.4.9)
+
+_(2025-12-17)_
+
+- Handle WMTS better.
+- More fixing of license parsing (noew for `dl-de-zero-2.0`).
+- Fix extraction of preview image (now labelled "Vorschaubild" instead of "Vorschaugrafik").
 - Set env variables for database and Solr index in scripts for running unit tests locally.
 
 ## [1.4.8](https://github.com/berlinonline/ckanext-fisbroker/releases/tag/1.4.8)
 
 _(2025-10-23)_
 
-- Fix fithub workflow.
-- Add new CLI command `check_hanging_jobs` for restarting the harvesters that have been idle for more than 24h.
+- Fix Github Workflow
+- Add new CLI command `check_hanging_jobs` for restarting the harvesters that have been idle for more then 24h
 
 ## [1.4.7](https://github.com/berlinonline/ckanext-fisbroker/releases/tag/1.4.7)
 
