@@ -506,8 +506,7 @@ class FisbrokerHarvester(CSWHarvester):
             ids.append(obj.id)
 
         if len(ids) == 0:
-            self._save_gather_error("No records received from the CSW server", harvest_job)
-            return None
+            LOG.info(f"No records received from the CSW server")
 
         return ids
 
