@@ -2,6 +2,12 @@
 
 ## Development
 
+## [1.4.10](https://github.com/berlinonline/ckanext-fisbroker/releases/tag/1.4.10)
+
+_(2026-01-12)_
+
+- If no changes are registered during gather stage (no new, changed or deleted records), then just log an info message instead of saving a gather error.
+
 ## [1.4.9](https://github.com/berlinonline/ckanext-fisbroker/releases/tag/1.4.9)
 
 _(2025-12-17)_
