@@ -2,6 +2,8 @@
 
 ## Development
 
+- No new records received from source (info instead of error)
+
 ## [1.4.9](https://github.com/berlinonline/ckanext-fisbroker/releases/tag/1.4.9)
 
 _(2025-12-17)_
