@@ -506,7 +506,7 @@ class FisbrokerHarvester(CSWHarvester):
             ids.append(obj.id)
 
         if len(ids) == 0:
-            LOG.info(f"No records received from the CSW server")
+            LOG.info("No changes registered during gather stage (no new, changed or deleted records).")
 
         return ids
 
