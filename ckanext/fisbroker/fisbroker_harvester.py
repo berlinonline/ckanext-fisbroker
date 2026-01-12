@@ -506,6 +506,8 @@ class FisbrokerHarvester(CSWHarvester):
             ids.append(obj.id)
 
         if len(ids) == 0:
+            import pdb
+            pdb.set_trace()
             self._save_gather_error("No records received from the CSW server", harvest_job)
             return None
 
@@ -591,6 +593,15 @@ class FisbrokerHarvester(CSWHarvester):
             status = 'change'
         else:
             status = self._get_object_extra(harvest_object, 'status')
+        
+        import ast
+        a = ast.literal_eval(harvest_object.source.config)
+        print (a.keys())
+
+        if a['force_import'] == 'true':
+            status = 'change'
+        else:
+            status = self._get_object_extra(harvest_object, 'status')            
 
         # Get the last harvested object (if any)
         previous_object = model.Session.query(HarvestObject) \
@@ -792,8 +803,8 @@ class FisbrokerHarvester(CSWHarvester):
                 package.state = "active"
 
             # Check if the modified date is more recent
-            if not self.force_import and previous_object and harvest_object.metadata_modified_date <= previous_object.metadata_modified_date:
-
+            if not self.force_import and not self.source_config['force_import'] and previous_object and harvest_object.metadata_modified_date <= previous_object.metadata_modified_date:
+                print (self.force_import)
                 # Assign the previous job id to the new object to
                 # avoid losing history
                 harvest_object.harvest_job_id = previous_object.job.id
@@ -811,6 +822,7 @@ class FisbrokerHarvester(CSWHarvester):
                     try:
                         package_dict = logic.get_action('package_show')(context,
                             {'id': harvest_object.package_id})
+                        print (package_dict)
                     except toolkit.ObjectNotFound:
                         pass
                     else:
@@ -822,6 +834,8 @@ class FisbrokerHarvester(CSWHarvester):
                             package_index.index_package(package_dict)
 
                 LOG.info(f"Document with GUID {harvest_object.guid} unchanged, skipping...")
+                import pdb
+                pdb.set_trace()
             else:
                 package_schema = logic.schema.default_update_package_schema()
                 package_schema['tags'] = tag_schema
