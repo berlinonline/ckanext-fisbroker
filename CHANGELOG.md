@@ -2,7 +2,7 @@
 
 ## Development
 
-- No new records received from source (info instead of error)
+- If no changes are registered during gather stage (no new, changed or deleted records), then just log an info message instead of saving a gather error.
 
 ## [1.4.9](https://github.com/berlinonline/ckanext-fisbroker/releases/tag/1.4.9)
 
