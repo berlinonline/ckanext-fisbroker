@@ -1,6 +1,11 @@
 # Changelog
 
 ## Development
+## [1.5.0](https://github.com/berlinonline/ckanext-fisbroker/releases/tag/1.5.0)
+
+_(2026-02-12)_
+
+- Template changes for styleguide implementation
 
 ## [1.4.10](https://github.com/berlinonline/ckanext-fisbroker/releases/tag/1.4.10)
 
