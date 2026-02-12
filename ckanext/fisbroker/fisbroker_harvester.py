@@ -792,7 +792,6 @@ class FisbrokerHarvester(CSWHarvester):
 
             # Check if the modified date is more recent
             if not self.force_import and previous_object and harvest_object.metadata_modified_date <= previous_object.metadata_modified_date:
-
                 # Assign the previous job id to the new object to
                 # avoid losing history
                 harvest_object.harvest_job_id = previous_object.job.id

@@ -233,7 +233,6 @@ def reimport_batch(package_ids, context):
 def reimport(package_id, direct_call=False, context=None):
     '''Reimport package with `package_id` from the original harvest
         source.'''
-
     if not context:
         context = {
             'model': model,
