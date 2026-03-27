@@ -39,7 +39,7 @@ class FisbrokerPlugin(plugins.SingletonPlugin):
         toolkit.add_public_directory(config, 'public')
         toolkit.add_resource('fanstatic', 'fisbroker')
         config['ckan.spatial.validator.profiles'] = 'always-valid'
-
+        config['ckanext.geoharvester.datasetschema'] = 'berlin_dataset_schema'
     # -------------------------------------------------------------------
     # Implementation ITemplateHelpers
     # -------------------------------------------------------------------

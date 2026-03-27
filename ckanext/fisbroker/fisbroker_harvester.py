@@ -615,7 +615,7 @@ class FisbrokerHarvester(CSWHarvester):
             self.__base_transform_to_iso_called = False
             content = self.transform_to_iso(original_document, original_format, harvest_object)
             if not self.__base_transform_to_iso_called:
-                LOG.warn("Deprecation warning: calling transform_to_iso directly is deprecated. " +
+                LOG.warning("Deprecation warning: calling transform_to_iso directly is deprecated. " +
                          "Please use the ISpatialHarvester interface method instead.")
 
             for harvester in plugins.PluginImplementations(ISpatialHarvester):

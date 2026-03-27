@@ -7,6 +7,8 @@ _(2026-02-12)_
 
 - Template changes for styleguide implementation
 
+- Add command `ckan fisbroker get-record` to cli for testing conversion from CSW to package dict.
+
 ## [1.4.10](https://github.com/berlinonline/ckanext-fisbroker/releases/tag/1.4.10)
 
 _(2026-01-12)_
