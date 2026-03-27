@@ -3,6 +3,7 @@
 ## Development
 
 - Add command `ckan fisbroker get-record` to cli for testing conversion from CSW to package dict.
+- Add code for extracting an HVD category.
 
 ## [1.5.0](https://github.com/berlinonline/ckanext-fisbroker/releases/tag/1.5.0)
 

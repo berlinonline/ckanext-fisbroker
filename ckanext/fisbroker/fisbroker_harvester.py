@@ -44,6 +44,7 @@ from ckanext.spatial.validation.validation import BaseValidator
 from ckanext.fisbroker import HARVESTER_ID
 from ckanext.fisbroker.csw_client import CswService
 from ckanext.fisbroker.fisbroker_resource_annotator import FISBrokerResourceAnnotator
+from ckanext.fisbroker.hvd_extractor import extract_hvd_categories, HVD_PREFIX
 import ckanext.fisbroker.helper as helpers
 
 
@@ -869,6 +870,7 @@ class FisbrokerHarvester(CSWHarvester):
 
             package_dict = data_dict['package_dict']
             iso_values = data_dict['iso_values']
+            xml_tree = data_dict['xml_tree']
             harvest_object = data_dict.get('harvest_object')
 
             LOG.debug(iso_values['title'])
@@ -1007,6 +1009,13 @@ class FisbrokerHarvester(CSWHarvester):
 
             # LOG.info("----- data after get_package_dict -----")
             # LOG.debug(package_dict)
+
+            # HVD categories
+            hvd_categories = extract_hvd_categories(xml_tree)
+            codes = [category['uri'].removeprefix(HVD_PREFIX) for category in hvd_categories]
+            if len(codes) > 0:
+                # we assume there can be only one HVD category (but is that true?)
+                extras['hvd_category'] = codes[0]
 
             # extras
             package_dict['extras'] = extras_as_list(extras)
