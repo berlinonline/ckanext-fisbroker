@@ -69,6 +69,7 @@ class TestTransformationHelpers(FisbrokerTestBase):
         xml_string = self._open_xml_fixture(dataset_name)
         iso_document = ISODocument(xml_string)
         iso_values = iso_document.read_values()
+        xml_tree = iso_document.xml_tree
         base_harvester = SpatialHarvester()
         source = self._create_source()
         obj = HarvestObject(
@@ -79,7 +80,8 @@ class TestTransformationHelpers(FisbrokerTestBase):
 
         data_dict = {
             'package_dict': package_dict ,
-            'iso_values': iso_values
+            'iso_values': iso_values,
+            'xml_tree': xml_tree
         }
         return data_dict
 
