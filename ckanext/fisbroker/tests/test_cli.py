@@ -21,6 +21,15 @@ from ckanext.fisbroker.tests import FisbrokerTestBase, base_context, FISBROKER_H
 
 LOG = logging.getLogger(__name__)
 
+@pytest.fixture(autouse=True)
+def disable_logging():
+    '''
+    For some reason there is CKAN log output (warning messages) that ends up in
+    the cli's result.stdout, making the following json.loads(result.stdout) fail.
+    This fixture supresses all logging while running these unit tests.
+    '''
+    logging.disable(logging.CRITICAL)
+
 @pytest.mark.ckan_config('ckan.plugins', f"{FISBROKER_PLUGIN} {HARVESTER_ID} harvest dummyharvest")
 @pytest.mark.usefixtures('with_plugins', 'clean_db', 'clean_index', 'harvest_setup')
 class TestCli(FisbrokerTestBase):
