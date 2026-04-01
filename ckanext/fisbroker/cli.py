@@ -1,26 +1,29 @@
 '''Module to implement a click CLI for the FIS-Broker-Harvester'''
 
+import datetime
 import json
 import logging
 import sys
 import time
-import datetime
+from pydoc import doc
 
-import click
-
-from ckan import logic
-from ckan import model
-from ckan.lib import mailer
+import ckan.plugins as plugins
 import ckan.plugins.toolkit as tk
+import click
+from ckan import logic, model
+from ckan.lib import mailer
+from ckan.lib.navl.dictization_functions import Missing, validate
+from ckantoolkit import config
 
-from ckanext.fisbroker import HARVESTER_ID
 import ckanext.fisbroker.blueprint as blueprint
-from ckanext.fisbroker.fisbroker_harvester import FisbrokerHarvester
+from ckanext.fisbroker import HARVESTER_ID
+from ckanext.fisbroker.csw_client import CswService
 from ckanext.fisbroker.exceptions import NotFoundInFisbrokerError
-
-from ckanext.harvest.model import HarvestObject, HarvestSource, HarvestJob
+from ckanext.fisbroker.fisbroker_harvester import FisbrokerHarvester
+from ckanext.harvest.model import HarvestJob, HarvestObject, HarvestSource
 from ckanext.harvest.queue import get_connection
-
+from ckanext.spatial.harvested_metadata import ISODocument
+from ckanext.spatial.harvesters.csw import CSWHarvester
 
 LOG = logging.getLogger(__name__)
 FISBROKER_SOURCE_NAME = 'harvest-fisbroker'
@@ -38,7 +41,7 @@ def _filter_datasets(datasets):
     '''Generate a list of filtered datasets.'''
     return [_filter_dataset(dataset) for dataset in datasets]
 
-def _list_sources():
+def _list_sources() -> list:
     '''List all instances of the FIS-Broker harvester.
     '''
     context = {'model': model, 'session': model.Session}
@@ -421,5 +424,98 @@ def check_hanging_jobs():
     except Exception as e:
         alerts.append(f"Monitoring failed: {str(e)}")
 
+XML = 'xml'
+ISO = 'iso'
+PACKAGE_BASE = 'package_base'
+PACKAGE = 'package'
+RECORD_FORMATS = [ XML, ISO, PACKAGE_BASE, PACKAGE ]
+DEFAULT_RECORD_FORMAT = PACKAGE
+@fisbroker.command()
+@click.option("-s",  "--source", help="The source id of the harvester. Default is the first one we find.")
+@click.option("-r",  "--record", help="The id of the record to get", required=True)
+@click.option("-f",  "--format", help=f"output format, one of [{'|'.join(RECORD_FORMATS)}]", default=PACKAGE)
+def get_record(source: str, record: str, format: str):
+    """
+        Get the document for `record` from `source`.
+    """
+    sources = _list_sources()
+    if source:
+        source_lookup = { source['id']: source for source in sources }
+        source_obj = source_lookup[source]
+    else:
+        source_obj = sources[0]
+    endpoint = source_obj['url']
+    click.echo(f"getting {record} from {endpoint}", err=True)
+    csw = CswService(endpoint=endpoint)
+    document = csw.getrecordbyid([record])
+    iso_document = ISODocument(xml_tree=document['tree'])
+    iso_values = iso_document.read_values()
+    if format == XML:
+        click.echo(document['xml'])
+    elif format == ISO:
+        click.echo(json.dumps(iso_values, indent=JSON_INDENT))
+    else:
+        # get_package_dict() is coupled to CKAN's harvesting infrastructure
+        from unittest.mock import Mock, patch
+
+        harvest_object = Mock()
+        harvest_object.source.id = "source-id"
+
+        harvester = CSWHarvester()
+        with patch("ckan.model.Package.get") as mock_get:
+            mock_dataset = Mock()
+            mock_dataset.owner_org = "test-org-id"
+            mock_get.return_value = mock_dataset
+
+            # optionally patch error logging too
+            with patch.object(harvester, "_save_object_error", lambda *a, **k: None):
+                package_dict = harvester.get_package_dict(iso_values, harvest_object)
+                if format == PACKAGE_BASE:
+                    click.echo(json.dumps(package_dict, indent=JSON_INDENT))
+                else:
+                    harvester = FisbrokerHarvester()
+                    package_dict = harvester.get_package_dict(None, {
+                        'package_dict': package_dict,
+                        'iso_values': iso_values,
+                        'harvest_object': harvest_object,
+                        'xml_tree': iso_document.xml_tree
+                    })
+                    context = {
+                        "model": model,
+                        "session": model.Session,
+                        "user": "test-user",
+                    }
+                    schema_plugin = plugins.get_plugin(config['ckanext.geoharvester.datasetschema'])
+                    click.echo(schema_plugin, err=True)
+                    schema = schema_plugin.show_package_schema()
+                    result, errors = validate(package_dict, schema, context)
+                    cleaned = clean_missing(result)
+                    # click.echo(cleaned)
+                    click.echo(json.dumps(cleaned, indent=JSON_INDENT))
+
+def clean_missing(data):
+    if isinstance(data, dict):
+        return {
+            k: clean_missing(v)
+            for k, v in data.items()
+            if not isinstance(v, Missing)
+        }
+    elif isinstance(data, list):
+        return [clean_missing(v) for v in data if not isinstance(v, Missing)]
+    else:
+        return data
+
 class MockHarvestJob:
     pass
+
+class DummySource:
+    def __init__(self):
+        self.id = "dummy-source"
+
+class DummyHarvestObject:
+    def __init__(self):
+        self.id = "dummy-id"
+        self.guid = "dummy-guid"
+        self.job = None
+        self.content = None
+        self.source = DummySource()

@@ -128,7 +128,7 @@ listing all instances of FisbrokerPlugin ...
 
 ## Copying and License
 
-This material is copyright © 2016 – 2024  [BerlinOnline GmbH](https://berlinonline.net).
+This material is copyright © 2016 – 2026  [BerlinOnline GmbH](https://berlinonline.net).
 
 This extension is open and licensed under the GNU Affero General Public License (AGPL) v3.0.
 Its full text may be found at:
