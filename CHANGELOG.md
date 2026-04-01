@@ -2,6 +2,10 @@
 
 ## Development
 
+## [1.5.1](https://github.com/berlinonline/ckanext-fisbroker/releases/tag/1.5.1)
+
+_(2026-04-01)_
+
 - Add command `ckan fisbroker get-record` to cli for testing conversion from CSW to package dict.
 - Add code for extracting an HVD category.
 - Suppress logging during CLI unit tests to prevent issues with CKAN log messages appearing in stdout (not stderr), causing the tests to fail.
