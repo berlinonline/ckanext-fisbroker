@@ -2,6 +2,8 @@
 
 ## Development
 
+- Set `force_import = True` on the harvester when importing from `big_bang`. Otherwise records that are younger on the CSW than whta we have locally would be skipped.
+
 ## [1.5.1](https://github.com/berlinonline/ckanext-fisbroker/releases/tag/1.5.1)
 
 _(2026-04-01)_

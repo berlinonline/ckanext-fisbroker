@@ -285,6 +285,11 @@ def extras_as_list(extras_dict):
 class FisbrokerHarvester(CSWHarvester):
     '''Main plugin class of the ckanext-fisbroker extension.'''
 
+    # If force_import is set, records from the CSW are imported even if the version that
+    # we have locally in our database (from a previous import) is younger than the version we're
+    # getting from from the CSW.
+    force_import: bool
+
     plugins.implements(IHarvester, inherit=True)
     plugins.implements(ISpatialHarvester, inherit=True)
 
@@ -302,7 +307,8 @@ class FisbrokerHarvester(CSWHarvester):
            the query constraint). Handle special values such as
            `last_error_free` and `big bang`.'''
 
-        if not 'import_since' in self.source_config:
+        self.force_import = False
+        if 'import_since' not in self.source_config:
             return None
         import_since = self.source_config['import_since']
         if import_since == 'last_error_free':
@@ -316,6 +322,7 @@ class FisbrokerHarvester(CSWHarvester):
                 return None
         elif import_since == 'big_bang':
             # looking since big bang means no date constraint
+            self.force_import = True
             return None
         return import_since
 
@@ -791,8 +798,12 @@ class FisbrokerHarvester(CSWHarvester):
                 LOG.info(f"The package named {package_dict['name']} was deleted, activating it again.")
                 package.state = "active"
 
-            # Check if the modified date is more recent
-            if not self.force_import and previous_object and harvest_object.metadata_modified_date <= previous_object.metadata_modified_date:
+            # If the incoming date (harvest_object) is not younger (<=) than the date we already have,
+            # we assume that the document is unchanged, and we're skipping it.
+            # UNLESS force_import is set, then we're not skipping!
+            if not self.force_import and \
+                previous_object and \
+                harvest_object.metadata_modified_date <= previous_object.metadata_modified_date:
                 # Assign the previous job id to the new object to
                 # avoid losing history
                 harvest_object.harvest_job_id = previous_object.job.id
