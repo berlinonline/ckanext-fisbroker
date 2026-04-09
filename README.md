@@ -44,17 +44,15 @@ There are different ways to trigger a reimport.
 
 ### Reimport Button
 
-Every dataset that was harvested by the FIS-Broker Harvester has a **Reimport** button next to the **Edit** button in the upper right-hand corner of the dataset page.
+Every dataset that was harvested by the FIS-Broker Harvester has a **Reimport** button at the top of the **Datensatz** tab.
 Clicking will trigger a reimport job for that dataset.
 
-![Screenshot eines Datensatzes "Schutzgebiete nach Naturschutzrecht" im Datenregister, mit rot hervorgehobenem Reimport-Button](image/reimport_button.png)
+![Screenshot of the dataset page "Adressen Berlin - [WFS]", with highlighted "Open-CSW-Record" and "Reimport" buttons](image/reimport_button.png)
 
 ### "Open CSW record"-Button
 
-Every dataset that was harvested by the FIS-Broker Harvester has an **Open CSW record** button next to the **Reimport** button in the upper right-hand corner of the dataset page.
+Every dataset that was harvested by the FIS-Broker Harvester has an **Open CSW record** button next to the **Reimport** button.
 Clicking will open the full CSW record for this dataset on its original server.
-
-![Screenshot eines Datensatzes "Schutzgebiete nach Naturschutzrecht" im Datenregister, mit rot hervorgehobenem "Open CSW Record"-Button](image/open_csw_record_button.png)
 
 ## Configuration
 
