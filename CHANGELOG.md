@@ -6,8 +6,8 @@
 
 _(2026-04-09)_
 
-- Set `force_import = True` on the harvester when importing from `big_bang`. Otherwise records that are younger on the CSW than whta we have locally would be skipped.
-- Change "Open CSW Record" and "Reimport" links to buttons. It just looks better.
+- Set `force_import = True` on the harvester when importing from `big_bang`. Otherwise records that are younger on the CSW than what we have locally would be skipped.
+- Turn "Open CSW Record" and "Reimport" links into buttons. It just looks better.
 
 ## [1.5.1](https://github.com/berlinonline/ckanext-fisbroker/releases/tag/1.5.1)
 
